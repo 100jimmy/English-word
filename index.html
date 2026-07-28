@@ -103,9 +103,8 @@
   </header>
 
   <div class="container">
-    <!-- 登入區塊 -->
     <div id="auth-section" class="card">
-      <h2 style="margin-top:0;">☁️ 歡迎使用3雲端單字庫</h2>
+      <h2 style="margin-top:0;">☁️ 歡迎使用雲端單字庫</h2>
       <p style="color: var(--text-muted);">輸入名字即可自動從 Google 雲端載入您的專屬單字：</p>
       <div class="form-group">
         <input type="text" id="username-input" placeholder="例如: Alex" />
@@ -113,14 +112,12 @@
       <button class="btn" style="width: 100%; margin-top: 0.5rem;" onclick="login()">🚀 載入雲端單字庫</button>
     </div>
 
-    <!-- 主導覽列 -->
     <div id="app-nav" class="nav-bar hidden">
       <button class="nav-btn active" onclick="switchTab('list')">📖 單字總覽</button>
       <button class="nav-btn" onclick="switchTab('add')">➕ 新增單字</button>
       <button class="nav-btn" onclick="switchTab('quiz')">✍️ 測驗模式</button>
     </div>
 
-    <!-- 1. 單字列表 -->
     <div id="list-tab" class="tab-content hidden">
       <div class="card">
         <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
@@ -134,7 +131,6 @@
       </div>
     </div>
 
-    <!-- 2. 新增單字 -->
     <div id="add-tab" class="tab-content hidden">
       <div class="card">
         <h2 style="margin-top:0;">➕ 新增英文單字</h2>
@@ -150,7 +146,6 @@
             <small id="auto-fetch-msg" style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.3rem; display: block;"></small>
           </div>
 
-          <!-- 動態詞性與解釋容器 -->
           <div id="definitions-container"></div>
 
           <button type="button" class="btn btn-secondary" style="width: 100%; margin-bottom: 1.5rem;" onclick="addDefinitionGroup()">
@@ -162,7 +157,6 @@
       </div>
     </div>
 
-    <!-- 3. 測驗頁面 -->
     <div id="quiz-tab" class="tab-content hidden">
       <div class="card quiz-container" id="quiz-start-box">
         <h2>🎯 選擇測驗模式</h2>
@@ -205,7 +199,7 @@
   </div>
 
   <script>
-    // 請替換為你重新部署後的 Web App URL
+    // ⚠️ 請務必替換為你最新發布的 Web App /exec 網址
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbymWm19Bgr_tpmWK7xAPDBVdnAchzG7auaIp6CREpF7OhGW2Cm36op31p0qN_6ArQYKg/exec";
 
     let currentUser = "";
@@ -214,26 +208,6 @@
     let currentQuizIndex = 0;
     let currentQuizQuestions = [];
     let wrongAnswers = [];
-
-    // JSONP 跨網域存取，解決 100% CORS 雲端問題
-    function jsonp(url) {
-      return new Promise((resolve, reject) => {
-        const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
-        window[callbackName] = function(data) {
-          delete window[callbackName];
-          document.body.removeChild(script);
-          resolve(data);
-        };
-        const script = document.createElement('script');
-        script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
-        script.onerror = function() {
-          delete window[callbackName];
-          document.body.removeChild(script);
-          reject(new Error('JSONP 請求失敗'));
-        };
-        document.body.appendChild(script);
-      });
-    }
 
     async function login() {
       const username = document.getElementById("username-input").value.trim();
@@ -256,34 +230,46 @@
       document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
     }
 
+    // 🟢 載入雲端資料 (使用標準 fetch doGet)
     async function loadUserDataFromCloud() {
       setSyncStatus("☁️ 正在連線雲端資料庫...");
       try {
-        const url = `${GAS_API_URL}?action=load&user=${encodeURIComponent(currentUser)}`;
-        const cloudData = await jsonp(url);
-        vocabData = cloudData || [];
-        setSyncStatus("✅ 雲端資料已同步");
+        const response = await fetch(`${GAS_API_URL}?user=${encodeURIComponent(currentUser)}`);
+        if (response.ok) {
+          const cloudData = await response.json();
+          vocabData = cloudData || [];
+          localStorage.setItem(`vocab_data_${currentUser}`, JSON.stringify(vocabData));
+          setSyncStatus("✅ 雲端資料已同步");
+        } else {
+          throw new Error("伺服器回應異常");
+        }
       } catch (err) {
-        console.error("連線錯誤:", err);
-        setSyncStatus("⚠️ 連線失敗，使用本機快取");
+        console.error("載入失敗:", err);
+        setSyncStatus("⚠️ 使用本機備份資料");
         const local = localStorage.getItem(`vocab_data_${currentUser}`);
         vocabData = local ? JSON.parse(local) : [];
       }
       renderWordList();
     }
 
+    // 🟢 儲存至雲端 (使用傳統 Form URL Encoded 模式，防止跨域被擋)
     async function saveUserDataToCloud() {
       localStorage.setItem(`vocab_data_${currentUser}`, JSON.stringify(vocabData));
       setSyncStatus("☁️ 正在同步至雲端...");
+
       try {
-        const jsonStr = JSON.stringify(vocabData);
-        const url = `${GAS_API_URL}?action=save&user=${encodeURIComponent(currentUser)}&data=${encodeURIComponent(jsonStr)}`;
-        const res = await jsonp(url);
-        if (res && res.status === "success") {
-          setSyncStatus("✅ 已同步至 Google 試算表");
-        } else {
-          setSyncStatus("⚠️ 雲端備份存檔微調");
-        }
+        const payload = new URLSearchParams();
+        payload.append("user", currentUser);
+        payload.append("data", JSON.stringify(vocabData));
+
+        await fetch(GAS_API_URL, {
+          method: "POST",
+          mode: "no-cors", // 關鍵：避免瀏覽器跨域攔截
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: payload.toString()
+        });
+        
+        setSyncStatus("✅ 已將更新傳送至雲端");
       } catch (err) {
         console.error("同步失敗:", err);
         setSyncStatus("⚠️ 雲端同步失敗 (已存於本機)");
@@ -353,7 +339,7 @@
       container.appendChild(div);
     }
 
-    // ⚡ 自動抓取所有詞性、中文與英文字典例句
+    // ⚡ 自動抓取所有詞性、中文與字典例句
     async function autoFetchAllDetails() {
       const word = document.getElementById("word-spelling").value.trim().toLowerCase();
       const msg = document.getElementById("auto-fetch-msg");
@@ -363,18 +349,16 @@
       msg.innerText = "🔍 正在從權威字典與翻譯資料庫抓取所有詞性與例句...";
 
       try {
-        // 1. 抓取字典例句與詞性 (Free Dictionary API)
         const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
         let dictData = null;
         if (dictRes.ok) dictData = await dictRes.json();
 
-        // 2. 抓取繁體中文翻譯 (MyMemory API)
         const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|zh-TW`);
         const transData = await transRes.json();
         let mainChinese = transData?.responseData?.translatedText || "";
 
         const container = document.getElementById("definitions-container");
-        container.innerHTML = ""; // 清空現有欄位
+        container.innerHTML = ""; 
 
         if (dictData && dictData[0] && dictData[0].meanings) {
           const meanings = dictData[0].meanings;
@@ -386,7 +370,6 @@
             else if (m.partOfSpeech.includes("adverb")) posStr = "adv.";
             else if (m.partOfSpeech.includes("preposition")) posStr = "prep.";
 
-            // 找第一個有例句的釋義
             let exampleSentence = "";
             if (m.definitions) {
               const defObj = m.definitions.find(d => d.example);
@@ -396,9 +379,8 @@
             addDefinitionGroup(posStr, mainChinese, exampleSentence);
           }
           msg.style.color = "var(--success)";
-          msg.innerText = `✅ 已為你自動帶入 ${meanings.length} 組詞性、中文釋義與字典例句！`;
+          msg.innerText = `✅ 已自動帶入 ${meanings.length} 組詞性、釋義與字典例句！`;
         } else {
-          // 如果字典 API 查不到，自動填入中文翻譯
           addDefinitionGroup("n.", mainChinese, "");
           msg.style.color = "var(--success)";
           msg.innerText = "✅ 已自動帶入中文釋義！";
@@ -406,7 +388,7 @@
       } catch (err) {
         console.error(err);
         msg.style.color = "var(--danger)";
-        msg.innerText = "⚠️ 帶入失敗，請手動增加欄位。";
+        msg.innerText = "⚠️ 帶入失敗，請手動填寫。";
       }
     }
 
