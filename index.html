@@ -54,10 +54,11 @@
     .word-card { background: white; border-radius: var(--radius); padding: 1.2rem; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); position: relative; }
     .word-card.error-marked { border-left: 5px solid var(--danger); }
     
-    /* 詞性與釋義樣式優化 */
-    .meaning-block { margin: 0.4rem 0; display: flex; align-items: baseline; gap: 0.4rem; flex-wrap: wrap; }
-    .badge-pos-tag { background: #e0e7ff; color: #4f46e5; font-size: 0.75rem; font-weight: 700; padding: 0.15rem 0.4rem; border-radius: 4px; display: inline-block; }
-    .meaning-text { font-size: 0.95rem; font-weight: 600; color: #334155; }
+    /* 詞性標籤與中文釋義優化樣式 */
+    .meaning-container { background: #f8fafc; padding: 0.6rem 0.8rem; border-radius: 8px; margin-bottom: 0.6rem; border: 1px solid #f1f5f9; }
+    .meaning-block { display: flex; align-items: center; gap: 0.5rem; margin: 0.2rem 0; flex-wrap: wrap; }
+    .badge-pos-tag { background: #6366f1; color: white; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 6px; display: inline-block; letter-spacing: 0.5px; }
+    .meaning-text { font-size: 1rem; font-weight: 700; color: #1e293b; }
     .badge-error { background: #fee2e2; color: var(--danger); font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px; }
 
     .quiz-container { text-align: center; }
@@ -89,7 +90,7 @@
     
     <!-- 1. 登入區塊 -->
     <div id="auth-section" class="card">
-      <h2 style="margin-top:0;">☁️ 歡迎使用雲端單字庫試6</h2>
+      <h2 style="margin-top:0;">☁️ 歡迎使用雲端單字庫</h2>
       <p style="color: var(--text-muted); margin-bottom: 1rem;">輸入名字即可自動從 Google 雲端載入您的專屬單字：</p>
       <div class="form-group">
         <input type="text" id="username-input" placeholder="例如: Alex" onkeydown="if(event.key==='Enter') login()" />
@@ -150,7 +151,7 @@
 
           <div class="form-group">
             <label>中文解釋 (格式可寫例如：n.嘗試 v.努力)</label>
-            <input type="text" id="word-meaning" required placeholder="例如: n.嘗試 v.努力">
+            <input type="text" id="word-meaning" required placeholder="例如: 嘗試、努力">
           </div>
 
           <div class="form-group">
@@ -213,13 +214,13 @@
       </div>
       
       <div class="form-group">
-        <label>詞性標籤</label>
+        <label>詞性標籤 (例如: n., v., adj.)</label>
         <input type="text" id="edit-word-pos" placeholder="例如: n., v.">
       </div>
 
       <div class="form-group">
-        <label>中文註釋 / 解釋 (可以自由加上多種詞性釋義)</label>
-        <textarea id="edit-word-meaning" rows="3" placeholder="例如: n.嘗試 v.試圖"></textarea>
+        <label>中文註釋 / 解釋</label>
+        <textarea id="edit-word-meaning" rows="3" placeholder="例如: 嘗試、努力"></textarea>
       </div>
 
       <div class="form-group">
@@ -272,6 +273,7 @@
       document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
     }
 
+    // 🔒 確保載入時每個單字都有獨一無二的 id
     async function loadUserDataFromCloud() {
       setSyncStatus("⏳ 正在連接 Google 試算表...");
       const targetUrl = `${GAS_API_URL}?user=${encodeURIComponent(currentUser)}&t=${Date.now()}`;
@@ -282,7 +284,14 @@
 
         const cloudData = await res.json();
         if (Array.isArray(cloudData)) {
-          vocabData = cloudData;
+          vocabData = cloudData.map((item, index) => ({
+            id: item.id ? String(item.id) : `id_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 5)}`,
+            word: item.word || "",
+            pos: item.pos || "",
+            meaning: item.meaning || "",
+            sentence: item.sentence || "",
+            isError: !!item.isError
+          }));
           setSyncStatus(`✅ 已成功載入 ${vocabData.length} 個雲端單字！`);
         } else {
           throw new Error("格式錯誤");
@@ -432,25 +441,36 @@
       if (cb) cb.checked = true;
     }
 
-    // 🎨 美化並標籤化中文釋義 (例如將 "n.試 v.努力" 自動格式化為精美標籤)
-    function formatMeaningHtml(meaningStr) {
-      if (!meaningStr) return "";
-      const posRegex = /(n\.|v\.|adj\.|adv\.|prep\.|conj\.|phr\.|pron\.|num\.|int\.)/gi;
-      
-      if (!posRegex.test(meaningStr)) {
-        return `<span class="meaning-text">${meaningStr}</span>`;
+    // 🎨 強力渲染詞性 + 中文釋義 HTML
+    function formatMeaningHtml(posStr, meaningStr) {
+      let html = "";
+
+      // 1. 若有填寫獨立 pos 欄位，先顯示亮眼標籤
+      if (posStr && posStr.trim() !== "" && posStr !== "其他") {
+        const tags = posStr.split(",").map(p => `<span class="badge-pos-tag">${p.trim()}</span>`).join(" ");
+        html += `<div class="meaning-block">${tags}<span class="meaning-text">${meaningStr || ''}</span></div>`;
+        return html;
       }
 
-      const parts = meaningStr.split(/(?=(?:n\.|v\.|adj\.|adv\.|prep\.|conj\.|phr\.|pron\.|num\.|int\.))/gi);
-      return parts.map(part => {
-        const trimmed = part.trim();
-        if (!trimmed) return "";
-        const match = trimmed.match(/^(n\.|v\.|adj\.|adv\.|prep\.|conj\.|phr\.|pron\.|num\.|int\.)\s*(.*)/i);
-        if (match) {
-          return `<div class="meaning-block"><span class="badge-pos-tag">${match[1]}</span><span class="meaning-text">${match[2]}</span></div>`;
+      // 2. 若沒有 pos 欄位，檢查 meaningStr 裡面是否藏有 n./v./adj.
+      if (meaningStr) {
+        const posRegex = /(n\.|v\.|adj\.|adv\.|prep\.|conj\.|phr\.|pron\.|num\.|int\.)/gi;
+        if (posRegex.test(meaningStr)) {
+          const parts = meaningStr.split(/(?=(?:n\.|v\.|adj\.|adv\.|prep\.|conj\.|phr\.|pron\.|num\.|int\.))/gi);
+          return parts.map(part => {
+            const trimmed = part.trim();
+            if (!trimmed) return "";
+            const match = trimmed.match(/^(n\.|v\.|adj\.|adv\.|prep\.|conj\.|phr\.|pron\.|num\.|int\.)\s*(.*)/i);
+            if (match) {
+              return `<div class="meaning-block"><span class="badge-pos-tag">${match[1]}</span><span class="meaning-text">${match[2]}</span></div>`;
+            }
+            return `<div class="meaning-block"><span class="meaning-text">${trimmed}</span></div>`;
+          }).join("");
         }
-        return `<span class="meaning-text">${trimmed}</span>`;
-      }).join("");
+      }
+
+      // 3. 一般純中文顯示
+      return `<div class="meaning-block"><span class="meaning-text">${meaningStr || '尚無釋義'}</span></div>`;
     }
 
     function renderWordList() {
@@ -468,7 +488,7 @@
       });
 
       if (filtered.length === 0) {
-        container.innerHTML = `<p style="grid-column: 1/-1; color: var(--text-muted);">尚無單字資料。</p>`;
+        container.innerHTML = `<p style="grid-column: 1/-1; color: var(--text-muted); text-align: center; padding: 2rem;">尚無單字資料。</p>`;
         return;
       }
 
@@ -476,7 +496,6 @@
         const card = document.createElement("div");
         card.className = `word-card ${item.isError ? 'error-marked' : ''}`;
         
-        // 安全處理安全字串 ID (避免數字與字串轉型問題)
         const safeId = String(item.id);
 
         card.innerHTML = `
@@ -485,8 +504,8 @@
             ${item.isError ? '<span class="badge-error">易錯</span>' : ''}
           </div>
           
-          <div style="margin-bottom: 0.6rem; background: #f8fafc; padding: 0.5rem; border-radius: 8px;">
-            ${formatMeaningHtml(item.meaning)}
+          <div class="meaning-container">
+            ${formatMeaningHtml(item.pos, item.meaning)}
           </div>
 
           ${item.sentence ? `<p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">💬 ${item.sentence}</p>` : ''}
@@ -512,10 +531,10 @@
 
       const selectedPos = Array.from(document.querySelectorAll('input[name="pos"]:checked'))
                                .map(cb => cb.value);
-      const posStr = selectedPos.length > 0 ? selectedPos.join(", ") : "其他";
+      const posStr = selectedPos.length > 0 ? selectedPos.join(", ") : "";
 
       vocabData.push({ 
-        id: Date.now().toString(), 
+        id: `id_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, 
         word: spelling, 
         pos: posStr, 
         meaning: meaning, 
@@ -565,15 +584,24 @@
       }
     }
 
-    // 🗑️ 修復刪除單字功能 (強制轉為 String 比對)
+    // 🗑️ 修復刪除單字（雙重保險：ID 比對或英文單字比對）
     async function deleteWord(id) {
-      const target = vocabData.find(i => String(i.id) === String(id));
-      const wordName = target ? target.word : "此單字";
+      let index = vocabData.findIndex(i => String(i.id) === String(id));
+      
+      if (index === -1) {
+        // 備用比對：如果找不到 ID，就比對是不是陣列 index
+        index = vocabData.findIndex((item, idx) => String(idx) === String(id));
+      }
 
-      if (confirm(`確定要刪除「${wordName}」嗎？`)) {
-        vocabData = vocabData.filter(i => String(i.id) !== String(id));
-        renderWordList();
-        await saveUserDataToCloud();
+      if (index !== -1) {
+        const wordName = vocabData[index].word;
+        if (confirm(`確定要刪除「${wordName}」嗎？`)) {
+          vocabData.splice(index, 1);
+          renderWordList();
+          await saveUserDataToCloud();
+        }
+      } else {
+        alert("找不到欲刪除的單字，請重新整理頁面。");
       }
     }
 
