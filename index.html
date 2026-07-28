@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VocabMaster - 雲端多釋義單字庫</title>
+  <title>VocabMaster - 劍橋單字庫</title>
   <style>
     :root {
       --primary: #4f46e5;
@@ -25,7 +25,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     body { background-color: var(--bg); color: var(--text); padding-bottom: 2rem; min-height: 100vh; }
     
-    header { background: linear-gradient(135deg, #4f46e5, #3b82f6); color: white; padding: 1.2rem 1.5rem; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow); }
+    header { background: linear-gradient(135deg, #4f46e5, #3b82f6); color: white; padding: 1.2rem 1.5rem; display: flex; justify-space-between; align-items: center; box-shadow: var(--shadow); }
     header h1 { font-size: 1.5rem; font-weight: 800; }
     
     .container { max-width: 900px; margin: 1.5rem auto; padding: 0 1rem; }
@@ -80,7 +80,7 @@
 
   <header>
     <div style="display: flex; align-items: center;">
-      <h1>VocabMaster v7.1</h1>
+      <h1>VocabMaster v8.0</h1>
       <span id="sync-indicator" class="sync-status"></span>
     </div>
     <div id="user-info">
@@ -90,21 +90,24 @@
   </header>
 
   <div class="container">
+    <!-- 登入頁面 -->
     <div id="auth-section" class="card">
-      <h2 style="margin-top:0;">☁️ 歡迎使用雲端單字庫 (中文多釋義版)</h2>
-      <p style="color: var(--text-muted); margin-bottom: 1rem;">輸入名字即可從 Google 雲端載入您的專屬單字：</p>
+      <h2 style="margin-top:0;">☁️ 歡迎使用劍橋雲端單字庫</h2>
+      <p style="color: var(--text-muted); margin-bottom: 1rem;">輸入名字即可從雲端載入您的專屬單字：</p>
       <div class="form-group">
         <input type="text" id="username-input" placeholder="例如: Alex" onkeydown="if(event.key==='Enter') login()" />
       </div>
       <button type="button" class="btn" style="width: 100%; margin-top: 0.5rem;" onclick="login()">🚀 載入雲端單字庫</button>
     </div>
 
+    <!-- 主導覽列 -->
     <div id="app-nav" class="nav-bar hidden">
       <button class="nav-btn active" onclick="switchTab('list')">📖 單字總覽</button>
       <button class="nav-btn" onclick="switchTab('add')">➕ 新增單字</button>
       <button class="nav-btn" onclick="switchTab('quiz')">✍️ 測驗模式</button>
     </div>
 
+    <!-- 分頁 1: 單字列表 -->
     <div id="list-tab" class="tab-content hidden">
       <div class="card" style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
         <input type="text" id="search-input" placeholder="🔍 搜尋單字、詞性、解釋..." style="flex: 1; min-width: 200px;" oninput="renderWordList()">
@@ -116,19 +119,20 @@
       <div id="word-list" class="grid-list"></div>
     </div>
 
+    <!-- 分頁 2: 新增單字 -->
     <div id="add-tab" class="tab-content hidden">
       <div class="card">
-        <h2 style="margin-top:0;">➕ 新增英文單字 (支援中文多詞性)</h2>
+        <h2 style="margin-top:0;">➕ 新增單字 (直連劍橋詞典抓取)</h2>
         <form id="add-word-form" onsubmit="addWord(event)">
           <div class="form-group">
             <label>英文單字</label>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
               <input type="text" id="word-spelling" required placeholder="例如: last" style="flex: 1; min-width: 200px;">
-              <button type="button" class="btn btn-secondary" style="white-space: nowrap; padding: 0.8rem 1rem;" onclick="autoFetchDetails()">
-                ⚡ 自動抓取中文釋義
+              <button type="button" class="btn" style="white-space: nowrap; padding: 0.8rem 1rem;" onclick="autoFetchDetails()">
+                ⚡ 自動抓取劍橋釋義
               </button>
               <button type="button" class="btn btn-secondary" style="white-space: nowrap; padding: 0.8rem 1rem;" onclick="openQuickLookup()">
-                🔍 查劍橋字典
+                🔍 開啟劍橋網頁
               </button>
             </div>
             <div id="auto-fetch-msg" style="font-size: 0.85rem; margin-top: 0.5rem; font-weight: 600;"></div>
@@ -136,7 +140,7 @@
 
           <div class="form-group">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-              <label style="margin:0;">詞性與中文解釋 (可增加多組)</label>
+              <label style="margin:0;">詞性與繁體中文解釋</label>
               <button type="button" class="btn btn-secondary" style="padding: 0.2rem 0.6rem; font-size: 0.8rem;" onclick="addMeaningRow('add-meanings-container')">➕ 新增一組詞性</button>
             </div>
             <div id="add-meanings-container"></div>
@@ -152,6 +156,7 @@
       </div>
     </div>
 
+    <!-- 分頁 3: 測驗模式 -->
     <div id="quiz-tab" class="tab-content hidden">
       <div id="quiz-start-box" class="card quiz-container">
         <h2>✍️ 單字自我測驗</h2>
@@ -189,7 +194,7 @@
 
   </div>
 
-  <!-- 編輯視窗 -->
+  <!-- 編輯彈出視窗 -->
   <div id="edit-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <h3 style="margin-bottom: 1rem;">✏️ 編輯單字內容</h3>
@@ -202,7 +207,7 @@
       
       <div class="form-group">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-          <label style="margin:0;">詞性與中文解釋</label>
+          <label style="margin:0;">詞性與繁體中文解釋</label>
           <button type="button" class="btn btn-secondary" style="padding: 0.2rem 0.6rem; font-size: 0.8rem;" onclick="addMeaningRow('edit-meanings-container')">➕ 新增一組詞性</button>
         </div>
         <div id="edit-meanings-container"></div>
@@ -247,7 +252,7 @@
 
       row.innerHTML = `
         <select class="pos-select">${optionsHtml}</select>
-        <input type="text" class="meaning-input" placeholder="中文解釋 (例如: 最後的)" value="${meaning}">
+        <input type="text" class="meaning-input" placeholder="繁體中文解釋" value="${meaning}">
         <button type="button" class="btn btn-secondary" style="padding: 0.5rem; color: var(--danger);" onclick="removeMeaningRow(this)">✕</button>
       `;
 
@@ -398,7 +403,7 @@
       window.open(`https://dictionary.cambridge.org/zht/dictionary/english-chinese-traditional/${encodeURIComponent(word.toLowerCase())}`, '_blank');
     }
 
-    // 改良版：自動抓取繁體中文翻譯與詞性
+    // ⚡ 劍橋詞典直連抓取核心
     async function autoFetchDetails() {
       const word = document.getElementById("word-spelling").value.trim().toLowerCase();
       const msg = document.getElementById("auto-fetch-msg");
@@ -407,73 +412,76 @@
 
       if (msg) {
         msg.style.color = "var(--primary)";
-        msg.innerText = "⏳ 正在抓取繁體中文釋義...";
+        msg.innerText = "⏳ 正在從劍橋詞典即時擷取繁體中文釋義...";
       }
 
       const container = document.getElementById("add-meanings-container");
       container.innerHTML = "";
 
-      try {
-        // 先向英英字典 API 抓詞性結構
-        let posList = [];
-        const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
-        if (dictRes.ok) {
-          const dictData = await dictRes.json();
-          if (Array.isArray(dictData) && dictData[0]?.meanings) {
-            dictData[0].meanings.forEach(m => {
-              const rawPos = m.partOfSpeech ? m.partOfSpeech.toLowerCase() : "";
-              if (rawPos.includes("verb")) posList.push("v.");
-              else if (rawPos.includes("noun")) posList.push("n.");
-              else if (rawPos.includes("adjective")) posList.push("adj.");
-              else if (rawPos.includes("adverb")) posList.push("adv.");
-              else if (rawPos.includes("preposition")) posList.push("prep.");
-              else if (rawPos.includes("conjunction")) posList.push("conj.");
+      const targetUrl = `https://dictionary.cambridge.org/zht/dictionary/english-chinese-traditional/${encodeURIComponent(word)}`;
+      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
 
-              // 順便抓例句
-              const defWithEx = m.definitions.find(d => d.example);
-              if (defWithEx && !document.getElementById("word-sentence").value) {
-                document.getElementById("word-sentence").value = defWithEx.example;
+      try {
+        const res = await fetch(proxyUrl);
+        if (!res.ok) throw new Error("無法連結劍橋詞典");
+
+        const htmlText = await res.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlText, "text/html");
+
+        const posBlocks = doc.querySelectorAll(".pos-block, .pr.entry-body__el");
+        let fetchedCount = 0;
+
+        if (posBlocks.length > 0) {
+          posBlocks.forEach(block => {
+            const posEl = block.querySelector(".pos");
+            let rawPos = posEl ? posEl.innerText.trim().toLowerCase() : "";
+            
+            let posTag = "其他";
+            if (rawPos.includes("verb") || rawPos === "v") posTag = "v.";
+            else if (rawPos.includes("noun") || rawPos === "n") posTag = "n.";
+            else if (rawPos.includes("adjective") || rawPos === "adj") posTag = "adj.";
+            else if (rawPos.includes("adverb") || rawPos === "adv") posTag = "adv.";
+            else if (rawPos.includes("preposition") || rawPos === "prep") posTag = "prep.";
+            else if (rawPos.includes("conjunction") || rawPos === "conj") posTag = "conj.";
+
+            const transEls = block.querySelectorAll(".trans");
+            let zhMeanings = [];
+            
+            transEls.forEach(trans => {
+              const text = trans.innerText.trim();
+              if (text && !zhMeanings.includes(text) && /^[\u4e00-\u9fa5A-Za-z0-9\s，；、]+$/.test(text)) {
+                zhMeanings.push(text);
               }
             });
-          }
-        }
 
-        // 使用 MyMemory API 抓中文翻譯
-        const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|zh-TW`);
-        if (transRes.ok) {
-          const transData = await transRes.json();
-          const translatedText = transData?.responseData?.translatedText || "";
-
-          if (translatedText) {
-            // 切割常見逗號隔開的多個中文
-            const parts = translatedText.split(/[,，;；]/).map(s => s.trim()).filter(Boolean);
-            
-            if (posList.length > 0) {
-              // 結合詞性與中文
-              posList.forEach((pos, idx) => {
-                const zh = parts[idx] || parts[0] || translatedText;
-                addMeaningRow("add-meanings-container", pos, zh);
-              });
-            } else {
-              addMeaningRow("add-meanings-container", "adj.", parts[0] || translatedText);
+            if (zhMeanings.length > 0) {
+              const combinedZh = zhMeanings.slice(0, 2).join('；');
+              addMeaningRow("add-meanings-container", posTag, combinedZh);
+              fetchedCount++;
             }
+
+            const exEl = block.querySelector(".eg");
+            if (exEl && !document.getElementById("word-sentence").value) {
+              document.getElementById("word-sentence").value = exEl.innerText.trim();
+            }
+          });
+        }
+
+        if (fetchedCount > 0) {
+          if (msg) {
+            msg.style.color = "var(--success)";
+            msg.innerText = `✅ 成功從劍橋詞典擷取 ${fetchedCount} 組精準繁體中文釋義！`;
           }
-        }
-
-        if (container.children.length === 0) {
-          addMeaningRow("add-meanings-container", "adj.", "");
-        }
-
-        if (msg) {
-          msg.style.color = "var(--success)";
-          msg.innerText = "✅ 中文釋義抓取成功！你可以直接點擊預覽或調整文字。";
+        } else {
+          throw new Error("網頁中未發現釋義");
         }
 
       } catch (err) {
-        console.error("AutoFetch Error:", err);
+        console.error("Cambridge Fetch Error:", err);
         if (msg) {
           msg.style.color = "var(--danger)";
-          msg.innerText = `❌ 出錯: ${err.message}`;
+          msg.innerText = `⚠️ 劍橋讀取受限，已為您準備預設欄位（可按右側「開啟劍橋網頁」輔助）。`;
         }
         addMeaningRow("add-meanings-container", "adj.", "");
       }
