@@ -62,7 +62,7 @@
     label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; color: var(--text-muted); }
     input, select, textarea { width: 100%; padding: 0.8rem 1rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: 1rem; background-color: #fff; }
 
-    .word-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.2rem; }
+    .word-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.2rem; }
     .word-card { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem; position: relative; }
     .word-card.error-marked { border-left: 4px solid var(--danger); }
 
@@ -97,7 +97,7 @@
   <div class="container">
     <!-- 登入區塊 -->
     <div id="auth-section" class="card">
-      <h2 style="margin-top:0;">☁️ 歡迎使用版二雲端單字庫</h2>
+      <h2 style="margin-top:0;">☁️ 歡迎使用雲端單字庫</h2>
       <p style="color: var(--text-muted);">輸入名字即可自動從 Google 雲端載入您的專屬單字：</p>
       <div class="form-group">
         <input type="text" id="username-input" placeholder="例如: Alex" />
@@ -133,7 +133,13 @@
         <form id="add-word-form" onsubmit="addWord(event)">
           <div class="form-group">
             <label>英文單字</label>
-            <input type="text" id="word-spelling" required placeholder="例如: persistent">
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="text" id="word-spelling" required placeholder="例如: persistent" style="flex: 1;">
+              <button type="button" class="btn btn-secondary" style="white-space: nowrap; padding: 0.8rem 1rem;" onclick="autoFetchTranslation()">
+                ⚡ 自動帶入中文
+              </button>
+            </div>
+            <small id="auto-fetch-msg" style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.3rem; display: block;"></small>
           </div>
           <div class="form-group">
             <label>詞性</label>
@@ -200,7 +206,8 @@
   </div>
 
   <script>
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbymWm19Bgr_tpmWK7xAPDBVdnAchzG7a6uaIp6CREpF7OhGW2Cm36op31p0qN_6ArQYKg/exec";
+    // 請替換為你正確的 GAS Web App URL (/exec 結尾)
+    const GAS_API_URL = "https://script.google.com/macros/s/YOUR_EXEC_URL_HERE/exec";
 
     let currentUser = "";
     let vocabData = [];
@@ -232,12 +239,14 @@
     async function loadUserDataFromCloud() {
       setSyncStatus("☁️ 正在連線雲端資料庫...");
       try {
-        const res = await fetch(`${GAS_API_URL}?user=${encodeURIComponent(currentUser)}`);
-        const cloudData = await res.json();
+        const response = await fetch(`${GAS_API_URL}?user=${encodeURIComponent(currentUser)}`);
+        if (!response.ok) throw new Error("HTTP error " + response.status);
+        
+        const cloudData = await response.json();
         vocabData = cloudData || [];
         setSyncStatus("✅ 雲端資料已同步");
       } catch (err) {
-        console.error(err);
+        console.error("連線錯誤:", err);
         setSyncStatus("⚠️ 連線失敗，使用本機快取");
         const local = localStorage.getItem(`vocab_data_${currentUser}`);
         vocabData = local ? JSON.parse(local) : [];
@@ -255,7 +264,7 @@
         });
         setSyncStatus("✅ 已同步至雲端試算表");
       } catch (err) {
-        console.error(err);
+        console.error("同步失敗:", err);
         setSyncStatus("⚠️ 雲端同步失敗");
       }
     }
@@ -311,15 +320,72 @@
             <span style="font-weight: 500;">${item.meaning}</span>
           </div>
           ${item.sentence ? `<p style="font-size: 0.85rem; color: var(--text-muted);">💬 ${item.sentence}</p>` : ''}
-          <div style="margin-top: 1rem; display: flex; justify-content: space-between;">
+          
+          <div style="margin-top: 1rem; display: flex; gap: 0.4rem; flex-wrap: wrap;">
+            <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="lookupDictionary('${item.word}')">
+              🔍 查字典
+            </button>
             <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="toggleError('${item.id}')">
               ${item.isError ? '取消易錯' : '標註易錯'}
             </button>
-            <button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="deleteWord('${item.id}')">刪除</button>
+            <button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; margin-left: auto;" onclick="deleteWord('${item.id}')">
+              刪除
+            </button>
           </div>
         `;
         container.appendChild(card);
       });
+    }
+
+    // 查字典功能 (開啟 Cambridge 詞典)
+    function lookupDictionary(word) {
+      const url = `https://dictionary.cambridge.org/zht/%E8%BE%9E%E5%85%B8/%E8%8B%B1%E8%AA%9E-%E7%B9%81%E9%AB%94%E4%B8%AD%E6%96%87/${encodeURIComponent(word.trim().toLowerCase())}`;
+      window.open(url, '_blank');
+    }
+
+    // 自動帶入中文翻譯與推測詞性
+    async function autoFetchTranslation() {
+      const word = document.getElementById("word-spelling").value.trim();
+      const msgEl = document.getElementById("auto-fetch-msg");
+
+      if (!word) return alert("請先輸入英文單字！");
+
+      msgEl.style.color = "var(--primary)";
+      msgEl.innerText = "🔍 正在自動查詢翻譯...";
+
+      try {
+        const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|zh-TW`);
+        const data = await response.json();
+
+        if (data && data.responseData && data.responseData.translatedText) {
+          document.getElementById("word-meaning").value = data.responseData.translatedText;
+          msgEl.style.color = "var(--success)";
+          msgEl.innerText = "✅ 已自動帶入中文翻譯！";
+          guessPOS(word);
+        } else {
+          throw new Error("查無翻譯");
+        }
+      } catch (err) {
+        console.error("自動翻譯失敗:", err);
+        msgEl.style.color = "var(--danger)";
+        msgEl.innerText = "⚠️ 自動帶入失敗，請手動輸入中文。";
+      }
+    }
+
+    // 依據字尾自動推測詞性
+    function guessPOS(word) {
+      const lower = word.toLowerCase();
+      const posSelect = document.getElementById("word-pos");
+
+      if (lower.endsWith("ly")) {
+        posSelect.value = "adv.";
+      } else if (lower.endsWith("tion") || lower.endsWith("ment") || lower.endsWith("ness") || lower.endsWith("ity")) {
+        posSelect.value = "n.";
+      } else if (lower.endsWith("ful") || lower.endsWith("ous") || lower.endsWith("ive") || lower.endsWith("able") || lower.endsWith("ible") || lower.endsWith("ic") || lower.endsWith("al")) {
+        posSelect.value = "adj.";
+      } else if (lower.endsWith("ize") || lower.endsWith("ise") || lower.endsWith("fy") || lower.endsWith("ate")) {
+        posSelect.value = "v.";
+      }
     }
 
     async function addWord(e) {
@@ -334,6 +400,7 @@
       await saveUserDataToCloud();
       alert("單字成功儲存並同步至雲端！");
       document.getElementById("add-word-form").reset();
+      document.getElementById("auto-fetch-msg").innerText = "";
       switchTab('list');
     }
 
