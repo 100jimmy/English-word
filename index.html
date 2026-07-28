@@ -31,7 +31,7 @@
     .container { max-width: 900px; margin: 1.5rem auto; padding: 0 1rem; }
     .card { background: var(--card-bg); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--border); }
     
-    /* 修正平板隱藏遮罩點擊問題 */
+    /* 防範平板隱藏遮罩點擊問題 */
     .hidden { display: none !important; pointer-events: none !important; }
     .sync-status { font-size: 0.85rem; color: #a5b4fc; font-weight: 500; margin-left: 1rem; }
     
@@ -86,7 +86,7 @@
 
   <div class="container">
     <div id="auth-section" class="card">
-      <h2 style="margin-top:0;">☁️ 歡迎使用雲端單字庫試4</h2>
+      <h2 style="margin-top:0;">☁️ 歡迎使用雲端單字庫試</h2>
       <p style="color: var(--text-muted); margin-bottom: 1rem;">輸入名字即可自動從 Google 雲端載入您的專屬單字：</p>
       <div class="form-group">
         <input type="text" id="username-input" placeholder="例如: Alex" onkeydown="if(event.key==='Enter') login()" />
@@ -461,7 +461,7 @@
             <button class="btn btn-secondary" style="padding: 0.3rem 0.5rem; font-size: 0.8rem;" onclick="toggleError('${item.id}')">
               ${item.isError ? '取消標註' : '標註易錯'}
             </button>
-            <!-- 改用平板安全的 data-id 傳遞方式 -->
+            <!-- 帶有除錯訊息的刪除按鈕 -->
             <button class="btn btn-danger" style="padding: 0.3rem 0.5rem; font-size: 0.8rem; margin-left: auto;" data-id="${item.id}" onclick="deleteWordSafe(this)">刪除</button>
           </div>
         `;
@@ -530,25 +530,42 @@
       }
     }
 
-    // 📱 平板專用的超強壯刪除函數
+    // 📱 帶有視覺除錯的刪除函數 (專為平板測試)
     function deleteWordSafe(btnElement) {
-      const id = btnElement.getAttribute('data-id');
-      if (!id) return alert("找不到單字 ID！");
+      alert("【除錯 1】點擊事件成功觸發！");
 
-      let isSure = false;
       try {
-        isSure = window.confirm("確定要刪除此單字？");
-      } catch (e) {
-        isSure = true; // 防範平板阻擋 confirm 彈窗
+        const id = btnElement.getAttribute('data-id');
+        alert("【除錯 2】讀取到的單字 ID 為: " + id);
+
+        if (!id) {
+          alert("【錯誤】找不到單字 ID，停止執行");
+          return;
+        }
+
+        let isSure = false;
+        try {
+          isSure = window.confirm("確定要刪除此單字？");
+        } catch (e) {
+          isSure = true; 
+        }
+
+        if (!isSure) return;
+
+        const targetId = String(id).trim();
+        const countBefore = vocabData.length;
+        
+        vocabData = vocabData.filter(item => String(item.id).trim() !== targetId);
+        const countAfter = vocabData.length;
+
+        alert(`【除錯 3】刪除前筆數: ${countBefore} -> 刪除後筆數: ${countAfter}`);
+
+        renderWordList();
+        saveUserDataToCloud();
+
+      } catch (err) {
+        alert("【執行爆發錯誤】: " + err.message);
       }
-
-      if (!isSure) return;
-
-      const targetId = String(id).trim();
-      vocabData = vocabData.filter(item => String(item.id).trim() !== targetId);
-
-      renderWordList();
-      saveUserDataToCloud(); // 背景非同步儲存，不卡畫面
     }
 
     async function toggleError(id) {
