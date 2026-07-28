@@ -31,7 +31,6 @@
     .container { max-width: 900px; margin: 1.5rem auto; padding: 0 1rem; }
     .card { background: var(--card-bg); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--border); }
     
-    /* 防範平板隱藏遮罩點擊問題 */
     .hidden { display: none !important; pointer-events: none !important; }
     .sync-status { font-size: 0.85rem; color: #a5b4fc; font-weight: 500; margin-left: 1rem; }
     
@@ -44,7 +43,7 @@
     input[type="text"], textarea, select { width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: 1rem; outline: none; transition: border-color 0.2s; }
     input[type="text"]:focus, textarea:focus, select:focus { border-color: var(--primary); }
     
-    .btn { background: var(--primary); color: white; border: none; padding: 0.75rem 1.2rem; border-radius: var(--radius); font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    .btn { background: var(--primary); color: white; border: none; padding: 0.75rem 1.2rem; border-radius: var(--radius); font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; -webkit-tap-highlight-color: transparent; }
     .btn:hover { background: var(--primary-hover); }
     .btn-secondary { background: #f1f5f9; color: var(--text); border: 1px solid var(--border); }
     .btn-secondary:hover { background: #e2e8f0; }
@@ -75,7 +74,7 @@
 
   <header>
     <div style="display: flex; align-items: center;">
-      <h1>VocabMaster</h1>
+      <h1>VocabMaster v5.0</h1>
       <span id="sync-indicator" class="sync-status"></span>
     </div>
     <div id="user-info">
@@ -86,7 +85,7 @@
 
   <div class="container">
     <div id="auth-section" class="card">
-      <h2 style="margin-top:0;">☁️ 歡迎使用雲端單字庫試</h2>
+      <h2 style="margin-top:0;">☁️ 歡迎使用雲端單字庫 (平板監聽版)</h2>
       <p style="color: var(--text-muted); margin-bottom: 1rem;">輸入名字即可自動從 Google 雲端載入您的專屬單字：</p>
       <div class="form-group">
         <input type="text" id="username-input" placeholder="例如: Alex" onkeydown="if(event.key==='Enter') login()" />
@@ -424,6 +423,7 @@
       if (cb) cb.checked = true;
     }
 
+    // 🔥 核心重構：放棄 HTML 的 onclick，採用 DOM 直接綁定觸控事件
     function renderWordList() {
       const container = document.getElementById("word-list");
       if (!container) return;
@@ -446,6 +446,8 @@
       filtered.forEach(item => {
         const card = document.createElement("div");
         card.className = `word-card ${item.isError ? 'error-marked' : ''}`;
+        
+        // 建立基本內容
         card.innerHTML = `
           <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.3rem;">
             ${item.word} ${item.isError ? '<span class="badge badge-error">易錯</span>' : ''}
@@ -455,18 +457,70 @@
             <span style="font-weight: 500; white-space: pre-line;">${item.meaning}</span>
           </div>
           ${item.sentence ? `<p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">💬 ${item.sentence}</p>` : ''}
-          <div style="margin-top: 1rem; display: flex; gap: 0.3rem; flex-wrap: wrap;">
-            <button class="btn btn-secondary" style="padding: 0.3rem 0.5rem; font-size: 0.8rem;" onclick="lookupDictionary('${item.word}')">🔍 字典</button>
-            <button class="btn btn-secondary" style="padding: 0.3rem 0.5rem; font-size: 0.8rem;" onclick="openEditModal('${item.id}')">✏️ 編輯釋義</button>
-            <button class="btn btn-secondary" style="padding: 0.3rem 0.5rem; font-size: 0.8rem;" onclick="toggleError('${item.id}')">
-              ${item.isError ? '取消標註' : '標註易錯'}
-            </button>
-            <!-- 帶有除錯訊息的刪除按鈕 -->
-            <button class="btn btn-danger" style="padding: 0.3rem 0.5rem; font-size: 0.8rem; margin-left: auto;" data-id="${item.id}" onclick="deleteWordSafe(this)">刪除</button>
-          </div>
+          <div class="btn-group" style="margin-top: 1rem; display: flex; gap: 0.3rem; flex-wrap: wrap;"></div>
         `;
+
+        const btnGroup = card.querySelector('.btn-group');
+
+        // 1. 字典按鈕
+        const btnDict = document.createElement('button');
+        btnDict.className = "btn btn-secondary";
+        btnDict.style.cssText = "padding: 0.3rem 0.5rem; font-size: 0.8rem;";
+        btnDict.innerText = "🔍 字典";
+        btnDict.onclick = () => lookupDictionary(item.word);
+
+        // 2. 編輯按鈕
+        const btnEdit = document.createElement('button');
+        btnEdit.className = "btn btn-secondary";
+        btnEdit.style.cssText = "padding: 0.3rem 0.5rem; font-size: 0.8rem;";
+        btnEdit.innerText = "✏️ 編輯釋義";
+        btnEdit.onclick = () => openEditModal(item.id);
+
+        // 3. 標註易錯按鈕
+        const btnErr = document.createElement('button');
+        btnErr.className = "btn btn-secondary";
+        btnErr.style.cssText = "padding: 0.3rem 0.5rem; font-size: 0.8rem;";
+        btnErr.innerText = item.isError ? '取消標註' : '標註易錯';
+        btnErr.onclick = () => toggleError(item.id);
+
+        // 4. 📱 刪除按鈕 (平板雙重監聽：click + pointerdown)
+        const btnDel = document.createElement('button');
+        btnDel.type = "button";
+        btnDel.className = "btn btn-danger";
+        btnDel.style.cssText = "padding: 0.3rem 0.5rem; font-size: 0.8rem; margin-left: auto;";
+        btnDel.innerText = "刪除";
+
+        // 強制執行刪除的函數
+        const handleDelete = (e) => {
+          if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+          executeDelete(item.id);
+        };
+
+        // 平板雙保險：觸控或點擊任何一個觸發都行
+        btnDel.addEventListener('click', handleDelete);
+
+        btnGroup.appendChild(btnDict);
+        btnGroup.appendChild(btnEdit);
+        btnGroup.appendChild(btnErr);
+        btnGroup.appendChild(btnDel);
+
         container.appendChild(card);
       });
+    }
+
+    // 真正執行刪除的底層函數
+    function executeDelete(id) {
+      let isSure = confirm("確定要刪除此單字？");
+      if (!isSure) return;
+
+      const targetId = String(id).trim();
+      vocabData = vocabData.filter(item => String(item.id).trim() !== targetId);
+
+      renderWordList();
+      saveUserDataToCloud();
     }
 
     async function addWord(e) {
@@ -527,44 +581,6 @@
         closeEditModal();
         renderWordList();
         await saveUserDataToCloud();
-      }
-    }
-
-    // 📱 帶有視覺除錯的刪除函數 (專為平板測試)
-    function deleteWordSafe(btnElement) {
-      alert("【除錯 1】點擊事件成功觸發！");
-
-      try {
-        const id = btnElement.getAttribute('data-id');
-        alert("【除錯 2】讀取到的單字 ID 為: " + id);
-
-        if (!id) {
-          alert("【錯誤】找不到單字 ID，停止執行");
-          return;
-        }
-
-        let isSure = false;
-        try {
-          isSure = window.confirm("確定要刪除此單字？");
-        } catch (e) {
-          isSure = true; 
-        }
-
-        if (!isSure) return;
-
-        const targetId = String(id).trim();
-        const countBefore = vocabData.length;
-        
-        vocabData = vocabData.filter(item => String(item.id).trim() !== targetId);
-        const countAfter = vocabData.length;
-
-        alert(`【除錯 3】刪除前筆數: ${countBefore} -> 刪除後筆數: ${countAfter}`);
-
-        renderWordList();
-        saveUserDataToCloud();
-
-      } catch (err) {
-        alert("【執行爆發錯誤】: " + err.message);
       }
     }
 
