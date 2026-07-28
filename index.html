@@ -74,7 +74,7 @@
 
   <header>
     <div style="display: flex; align-items: center;">
-      <h1>VocabMaster v5.0</h1>
+      <h1>VocabMaster v6.0</h1>
       <span id="sync-indicator" class="sync-status"></span>
     </div>
     <div id="user-info">
@@ -85,7 +85,7 @@
 
   <div class="container">
     <div id="auth-section" class="card">
-      <h2 style="margin-top:0;">☁️ 歡迎使用雲端單字庫 (平板監聽版)</h2>
+      <h2 style="margin-top:0;">☁️ 歡迎使用雲端單字庫 (無對話框版)</h2>
       <p style="color: var(--text-muted); margin-bottom: 1rem;">輸入名字即可自動從 Google 雲端載入您的專屬單字：</p>
       <div class="form-group">
         <input type="text" id="username-input" placeholder="例如: Alex" onkeydown="if(event.key==='Enter') login()" />
@@ -237,7 +237,7 @@
 
     async function login() {
       const input = document.getElementById("username-input");
-      if (!input) return alert("找不到輸入框！");
+      if (!input) return;
       
       const username = input.value.trim();
       if (!username) return alert("請輸入使用者名稱！");
@@ -423,7 +423,7 @@
       if (cb) cb.checked = true;
     }
 
-    // 🔥 核心重構：放棄 HTML 的 onclick，採用 DOM 直接綁定觸控事件
+    // 🚀 重構：完全不需要彈出視窗的「兩段式安全刪除按鈕」
     function renderWordList() {
       const container = document.getElementById("word-list");
       if (!container) return;
@@ -447,7 +447,6 @@
         const card = document.createElement("div");
         card.className = `word-card ${item.isError ? 'error-marked' : ''}`;
         
-        // 建立基本內容
         card.innerHTML = `
           <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.3rem;">
             ${item.word} ${item.isError ? '<span class="badge badge-error">易錯</span>' : ''}
@@ -483,24 +482,38 @@
         btnErr.innerText = item.isError ? '取消標註' : '標註易錯';
         btnErr.onclick = () => toggleError(item.id);
 
-        // 4. 📱 刪除按鈕 (平板雙重監聽：click + pointerdown)
+        // 4. 🔥 新刪除按鈕邏輯：免跳彈窗、原生UI兩階段安全確認
         const btnDel = document.createElement('button');
         btnDel.type = "button";
         btnDel.className = "btn btn-danger";
-        btnDel.style.cssText = "padding: 0.3rem 0.5rem; font-size: 0.8rem; margin-left: auto;";
+        btnDel.style.cssText = "padding: 0.3rem 0.5rem; font-size: 0.8rem; margin-left: auto; transition: all 0.2s;";
         btnDel.innerText = "刪除";
 
-        // 強制執行刪除的函數
-        const handleDelete = (e) => {
-          if (e) {
-            e.preventDefault();
-            e.stopPropagation();
-          }
-          executeDelete(item.id);
-        };
+        let timer = null;
+        let isConfirming = false;
 
-        // 平板雙保險：觸控或點擊任何一個觸發都行
-        btnDel.addEventListener('click', handleDelete);
+        btnDel.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          if (!isConfirming) {
+            // 第一階段：按鈕變身，提醒再按一次
+            isConfirming = true;
+            btnDel.innerText = "⚠️ 確定刪除？";
+            btnDel.style.backgroundColor = "#b91c1c";
+            
+            // 3 秒沒按第二次就還原
+            timer = setTimeout(() => {
+              isConfirming = false;
+              btnDel.innerText = "刪除";
+              btnDel.style.backgroundColor = "";
+            }, 3000);
+          } else {
+            // 第二階段：點擊第二次，直接刪除！
+            clearTimeout(timer);
+            executeDirectDelete(item.id);
+          }
+        };
 
         btnGroup.appendChild(btnDict);
         btnGroup.appendChild(btnEdit);
@@ -511,11 +524,8 @@
       });
     }
 
-    // 真正執行刪除的底層函數
-    function executeDelete(id) {
-      let isSure = confirm("確定要刪除此單字？");
-      if (!isSure) return;
-
+    // ⚡ 直接執行刪除，不經過任何 confirm 對話框
+    function executeDirectDelete(id) {
       const targetId = String(id).trim();
       vocabData = vocabData.filter(item => String(item.id).trim() !== targetId);
 
@@ -545,7 +555,6 @@
       renderWordList();
       await saveUserDataToCloud();
       
-      alert("單字成功儲存並同步至雲端！");
       document.getElementById("add-word-form").reset();
       document.querySelectorAll('input[name="pos"]').forEach(cb => cb.checked = false);
       if(document.getElementById("auto-fetch-msg")) document.getElementById("auto-fetch-msg").innerText = "";
