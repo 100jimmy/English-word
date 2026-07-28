@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VocabMaster - 雲端同步單字庫</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>VocabMaster - 雲端單字庫</title>
   <style>
     :root {
       --primary: #4f46e5;
@@ -12,80 +11,71 @@
       --primary-light: #e0e7ff;
       --bg: #f8fafc;
       --card-bg: #ffffff;
-      --text-main: #0f172a;
+      --text: #0f172a;
       --text-muted: #64748b;
+      --border: #e2e8f0;
       --danger: #ef4444;
-      --danger-light: #fee2e2;
+      --danger-hover: #dc2626;
       --warning: #f59e0b;
       --success: #10b981;
-      --border: #cbd5e1;
       --radius: 12px;
-      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 
-    * { box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
-    body { background-color: var(--bg); color: var(--text-main); margin: 0; padding: 0; min-height: 100vh; }
-
-    header {
-      background: linear-gradient(135deg, #4f46e5, #3b82f6);
-      color: white; padding: 1.2rem 2rem;
-      display: flex; justify-content: space-between; align-items: center;
-      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
-    }
-    header h1 { margin: 0; font-size: 1.5rem; font-weight: 700; }
-
-    .container { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
-    .card { background: var(--card-bg); border-radius: var(--radius); padding: 2rem; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 1.5rem; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding-bottom: 2rem; min-height: 100vh; }
     
-    .nav-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; background: #e2e8f0; padding: 0.3rem; border-radius: var(--radius); }
-    .nav-btn { flex: 1; border: none; background: transparent; padding: 0.75rem 1rem; border-radius: 8px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
-    .nav-btn.active { background: white; color: var(--primary); box-shadow: var(--shadow); }
-
-    .btn { 
-      background-color: var(--primary); 
-      color: #ffffff !important; 
-      border: none; 
-      padding: 0.8rem 1.5rem; 
-      border-radius: var(--radius); 
-      font-weight: 600; 
-      font-size: 1rem;
-      cursor: pointer; 
-      transition: all 0.2s; 
-      display: inline-block;
-      text-align: center;
-    }
-    .btn:hover { background-color: var(--primary-hover); }
-    .btn-secondary { background-color: #f1f5f9; color: var(--text-main) !important; }
-    .btn-danger { background-color: var(--danger); color: white !important; }
-
-    .form-group { margin-bottom: 1.2rem; }
-    label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; color: var(--text-muted); }
-    input, select, textarea { width: 100%; padding: 0.8rem 1rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: 1rem; background-color: #fff; }
-
-    .word-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.2rem; }
-    .word-card { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem; position: relative; }
-    .word-card.error-marked { border-left: 4px solid var(--danger); }
-
-    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
-    .badge-pos { background: var(--primary-light); color: var(--primary); }
-    .badge-error { background: var(--danger-light); color: var(--danger); }
-
-    .quiz-container { text-align: center; }
-    .quiz-type-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }
-    .type-card { border: 2px solid var(--border); border-radius: var(--radius); padding: 1.2rem; cursor: pointer; }
-    .type-card.selected { border-color: var(--primary); background: var(--primary-light); }
-    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
-    .option-btn { padding: 1.2rem; font-size: 1.05rem; background: #f8fafc; border: 2px solid var(--border); border-radius: var(--radius); cursor: pointer; text-align: left; }
-
+    header { background: linear-gradient(135deg, #4f46e5, #3b82f6); color: white; padding: 1.2rem 1.5rem; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow); }
+    header h1 { font-size: 1.5rem; font-weight: 800; }
+    
+    .container { max-width: 900px; margin: 1.5rem auto; padding: 0 1rem; }
+    .card { background: var(--card-bg); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--border); }
+    
     .hidden { display: none !important; }
     .sync-status { font-size: 0.85rem; color: #a5b4fc; font-weight: 500; margin-left: 1rem; }
+    
+    .nav-bar { display: flex; gap: 0.5rem; background: #e0e7ff; padding: 0.4rem; border-radius: var(--radius); margin-bottom: 1.5rem; }
+    .nav-btn { flex: 1; padding: 0.6rem 1rem; border: none; background: transparent; color: var(--primary); font-size: 0.95rem; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+    .nav-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 0.4rem; font-size: 0.9rem; }
+    input[type="text"], textarea, select { width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: 1rem; outline: none; transition: border-color 0.2s; }
+    input[type="text"]:focus, textarea:focus, select:focus { border-color: var(--primary); }
+    
+    .btn { background: var(--primary); color: white; border: none; padding: 0.75rem 1.2rem; border-radius: var(--radius); font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    .btn:hover { background: var(--primary-hover); }
+    .btn-secondary { background: #f1f5f9; color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: #e2e8f0; }
+    .btn-warning { background: var(--warning); color: white; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover { background: var(--danger-hover); }
+
+    .grid-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+    .word-card { background: white; border-radius: var(--radius); padding: 1.2rem; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); position: relative; }
+    .word-card.error-marked { border-left: 5px solid var(--danger); }
+    .badge { display: inline-block; padding: 0.2rem 0.5rem; font-size: 0.75rem; font-weight: 700; border-radius: 4px; margin-right: 0.4rem; }
+    .badge-pos { background: var(--primary-light); color: var(--primary); }
+    .badge-error { background: #fee2e2; color: var(--danger); }
+
+    .quiz-container { text-align: center; }
+    .quiz-type-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .type-card { border: 2px solid var(--border); border-radius: var(--radius); padding: 1rem; cursor: pointer; text-align: center; font-weight: 600; }
+    .type-card.selected { border-color: var(--primary); background: var(--primary-light); }
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
+    .option-btn { padding: 1rem; font-size: 1rem; background: #f8fafc; border: 2px solid var(--border); border-radius: var(--radius); cursor: pointer; font-weight: 600; }
+    .option-btn:hover { background: var(--primary-light); border-color: var(--primary); }
+
+    /* Modal 彈窗樣式 */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background: white; padding: 1.5rem; border-radius: var(--radius); width: 90%; max-width: 500px; box-shadow: var(--shadow); }
   </style>
 </head>
 <body>
 
   <header>
     <div style="display: flex; align-items: center;">
-      <h1>✨ VocabMaster</h1>
+      <h1>VocabMaster</h1>
       <span id="sync-indicator" class="sync-status"></span>
     </div>
     <div id="user-info">
@@ -95,14 +85,15 @@
   </header>
 
   <div class="container">
-    <!-- 登入區塊 -->
+    
+    <!-- 1. 登入區塊 -->
     <div id="auth-section" class="card">
-      <h2 style="margin-top:0;">☁️ 歡迎使用雲端單字庫試5</h2>
-      <p style="color: var(--text-muted);">輸入名字即可自動從 Google 雲端載入您的專屬單字：</p>
+      <h2 style="margin-top:0;">☁️ 歡迎使用雲端單字庫試4</h2>
+      <p style="color: var(--text-muted); margin-bottom: 1rem;">輸入名字即可自動從 Google 雲端載入您的專屬單字：</p>
       <div class="form-group">
-        <input type="text" id="username-input" placeholder="例如: Alex" />
+        <input type="text" id="username-input" placeholder="例如: Alex" onkeydown="if(event.key==='Enter') login()" />
       </div>
-      <button class="btn" style="width: 100%; margin-top: 0.5rem;" onclick="login()">🚀 載入雲端單字庫</button>
+      <button type="button" class="btn" style="width: 100%; margin-top: 0.5rem;" onclick="login()">🚀 載入雲端單字庫</button>
     </div>
 
     <!-- 主導覽列 -->
@@ -112,505 +103,567 @@
       <button class="nav-btn" onclick="switchTab('quiz')">✍️ 測驗模式</button>
     </div>
 
-    <!-- 1. 單字列表 -->
+    <!-- 2. 單字總覽頁面 -->
     <div id="list-tab" class="tab-content hidden">
+      <div class="card" style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
+        <input type="text" id="search-input" placeholder="🔍 搜尋單字、解釋..." style="flex: 1; min-width: 200px;" oninput="renderWordList()">
+        <select id="filter-select" style="width: auto; min-width: 120px;" onchange="renderWordList()">
+          <option value="all">顯示全部</option>
+          <option value="error">僅顯示易錯</option>
+        </select>
+      </div>
+      <div id="word-list" class="grid-list"></div>
+    </div>
+
+    <!-- 3. 新增單字頁面 -->
+    <div id="add-tab" class="tab-content hidden">
       <div class="card">
-        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
-          <input type="text" id="search-input" placeholder="🔍 搜尋單字、解釋..." oninput="renderWordList()">
-          <select id="filter-select" onchange="renderWordList()" style="width: 180px;">
-            <option value="all">顯示全部</option>
-            <option value="error">僅顯示易錯單字</option>
-          </select>
-        </div>
-        <div id="word-list" class="word-grid"></div>
+        <h2 style="margin-top:0;">➕ 新增英文單字 (即時同步雲端)</h2>
+        <form id="add-word-form" onsubmit="addWord(event)">
+          <div class="form-group">
+            <label>英文單字</label>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <input type="text" id="word-spelling" required placeholder="例如: try" style="flex: 1; min-width: 200px;">
+              <button type="button" class="btn btn-secondary" style="white-space: nowrap; padding: 0.8rem 1rem;" onclick="autoFetchDetails()">
+                ⚡ 自動帶入釋義/例句
+              </button>
+              <button type="button" class="btn btn-secondary" style="white-space: nowrap; padding: 0.8rem 1rem;" onclick="openQuickLookup()">
+                🔍 查劍橋字典
+              </button>
+            </div>
+            <div id="auto-fetch-msg" style="font-size: 0.85rem; margin-top: 0.5rem; font-weight: 600;"></div>
+          </div>
+
+          <div class="form-group">
+            <label>詞性 (可多選)</label>
+            <div id="word-pos-group" style="display: flex; gap: 0.8rem; flex-wrap: wrap; margin-top: 0.4rem; background: #f8fafc; padding: 0.8rem; border-radius: var(--radius); border: 1px solid var(--border);">
+              <label style="font-weight: 500; cursor: pointer;"><input type="checkbox" name="pos" value="n."> n. 名詞</label>
+              <label style="font-weight: 500; cursor: pointer;"><input type="checkbox" name="pos" value="v."> v. 動詞</label>
+              <label style="font-weight: 500; cursor: pointer;"><input type="checkbox" name="pos" value="adj."> adj. 形容詞</label>
+              <label style="font-weight: 500; cursor: pointer;"><input type="checkbox" name="pos" value="adv."> adv. 副詞</label>
+              <label style="font-weight: 500; cursor: pointer;"><input type="checkbox" name="pos" value="prep."> prep. 介系詞</label>
+              <label style="font-weight: 500; cursor: pointer;"><input type="checkbox" name="pos" value="conj."> conj. 連接詞</label>
+              <label style="font-weight: 500; cursor: pointer;"><input type="checkbox" name="pos" value="phr."> phr. 片語</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>中文解釋 (如多詞性可註明，例如：n.嘗試 v.試圖)</label>
+            <input type="text" id="word-meaning" required placeholder="例如: n.嘗試 v.努力">
+          </div>
+
+          <div class="form-group">
+            <label>英文例句 (可選)</label>
+            <textarea id="word-sentence" rows="2" placeholder="例如: I will try my best."></textarea>
+          </div>
+
+          <button type="submit" class="btn" style="width: 100%;">💾 儲存並同步至雲端</button>
+        </form>
       </div>
     </div>
 
-    <!-- 2. 新增單字 -->
-<div id="add-tab" class="tab-content hidden">
-  <div class="card">
-    <h2 style="margin-top:0;">➕ 新增英文單字 (即時同步雲端)</h2>
-    <form id="add-word-form" onsubmit="addWord(event)">
+    <!-- 4. 測驗模式頁面 -->
+    <div id="quiz-tab" class="tab-content hidden">
+      <div id="quiz-start-box" class="card quiz-container">
+        <h2>✍️ 單字自我測驗</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">選擇測驗類型來檢測你的記憶熟悉度：</p>
+        
+        <div class="quiz-type-selector">
+          <div class="type-card selected" onclick="selectQuizType('choice_en_zh', this)">看英選中 (選擇題)</div>
+          <div class="type-card" onclick="selectQuizType('choice_zh_en', this)">看中選英 (選擇題)</div>
+          <div class="type-card" onclick="selectQuizType('spelling', this)">看中拼英 (填空題)</div>
+        </div>
+
+        <button class="btn" style="padding: 0.8rem 2rem; font-size: 1.1rem;" onclick="startQuiz()">🚀 開始測驗</button>
+      </div>
+
+      <div id="quiz-running-box" class="card quiz-container hidden">
+        <div id="quiz-progress" style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem;"></div>
+        <h1 id="quiz-question-display" style="font-size: 2.2rem; color: var(--primary); margin-bottom: 0.5rem;"></h1>
+        <p id="quiz-sub-prompt" style="color: var(--text-muted);"></p>
+
+        <div id="quiz-options-container" class="options-grid"></div>
+
+        <div id="quiz-input-container" class="hidden" style="margin-top: 1.5rem;">
+          <input type="text" id="quiz-type-input" placeholder="請在此輸入英文單字..." style="font-size: 1.2rem; text-align: center; margin-bottom: 1rem;" onkeydown="if(event.key==='Enter') submitInputAnswer()">
+          <button class="btn" onclick="submitInputAnswer()">送出答案</button>
+        </div>
+      </div>
+
+      <div id="quiz-result-box" class="card quiz-container hidden">
+        <h2>🎉 測驗完成！</h2>
+        <h1 id="quiz-score-summary" style="margin: 1rem 0; color: var(--primary);"></h1>
+        <div id="wrong-words-container" style="text-align: left; margin: 1.5rem 0;"></div>
+        <button class="btn" onclick="resetQuizUI()">再測驗一次</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ✏️ 編輯單字彈窗 Modal -->
+  <div id="edit-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3 style="margin-bottom: 1rem;">✏️ 編輯單字內容</h3>
+      <input type="hidden" id="edit-word-id">
+      
       <div class="form-group">
         <label>英文單字</label>
-        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-          <input type="text" id="word-spelling" required placeholder="例如: persistent" style="flex: 1; min-width: 200px;">
-          <button type="button" class="btn btn-secondary" style="white-space: nowrap; padding: 0.8rem 1rem;" onclick="autoFetchDetails()">
-            ⚡ 自動帶入釋義/例句
-          </button>
-          <button type="button" class="btn btn-secondary" style="white-space: nowrap; padding: 0.8rem 1rem;" onclick="openQuickLookup()">
-            🔍 查劍橋字典
-          </button>
-        </div>
-        <div id="auto-fetch-msg" style="font-size: 0.85rem; margin-top: 0.5rem; font-weight: 600;"></div>
+        <input type="text" id="edit-word-spelling" disabled style="background: #f1f5f9; cursor: not-allowed;">
       </div>
-
-      <!-- 🌟 多詞性勾選區塊 -->
+      
       <div class="form-group">
-        <label>詞性 (可多選)</label>
-        <div id="word-pos-group" style="display: flex; gap: 0.8rem; flex-wrap: wrap; margin-top: 0.4rem; background: #f8fafc; padding: 0.8rem; border-radius: var(--radius); border: 1px solid var(--border);">
-          <label style="font-weight: 500; cursor: pointer;"><input type="checkbox" name="pos" value="n."> n. 名詞</label>
-          <label style="font-weight: 500; cursor: pointer;"><input type="checkbox" name="pos" value="v."> v. 動詞</label>
-          <label style="font-weight: 500; cursor: pointer;"><input type="checkbox" name="pos" value="adj."> adj. 形容詞</label>
-          <label style="font-weight: 500; cursor: pointer;"><input type="checkbox" name="pos" value="adv."> adv. 副詞</label>
-          <label style="font-weight: 500; cursor: pointer;"><input type="checkbox" name="pos" value="prep."> prep. 介系詞</label>
-          <label style="font-weight: 500; cursor: pointer;"><input type="checkbox" name="pos" value="conj."> conj. 連接詞</label>
-          <label style="font-weight: 500; cursor: pointer;"><input type="checkbox" name="pos" value="phr."> phr. 片語</label>
-        </div>
+        <label>詞性標籤</label>
+        <input type="text" id="edit-word-pos" placeholder="例如: n., v.">
       </div>
 
       <div class="form-group">
-        <label>中文解釋</label>
-        <input type="text" id="word-meaning" required placeholder="例如: 堅持不懈的">
+        <label>中文註釋 / 解釋 (可在後面新增補充)</label>
+        <textarea id="edit-word-meaning" rows="3" placeholder="例如: n.嘗試 v.試圖"></textarea>
       </div>
 
       <div class="form-group">
-        <label>英文例句 (可選)</label>
-        <textarea id="word-sentence" rows="2" placeholder="例如: She is persistent in pursuing her goal."></textarea>
+        <label>例句</label>
+        <textarea id="edit-word-sentence" rows="2"></textarea>
       </div>
 
-      <button type="submit" class="btn" style="width: 100%;">💾 儲存並同步至雲端</button>
-    </form>
-  </div>
-</div>
-
-    <!-- 3. 測驗頁面 -->
-    <div id="quiz-tab" class="tab-content hidden">
-      <div class="card quiz-container" id="quiz-start-box">
-        <h2>🎯 選擇測驗模式</h2>
-        <div class="quiz-type-selector">
-          <div class="type-card selected" onclick="selectQuizType('choice_en_zh', this)">
-            <h3>🔠 英譯中</h3>
-          </div>
-          <div class="type-card" onclick="selectQuizType('choice_zh_en', this)">
-            <h3>🔠 中譯英</h3>
-          </div>
-          <div class="type-card" onclick="selectQuizType('spelling', this)">
-            <h3>✍️ 拼字填空</h3>
-          </div>
-        </div>
-        <button class="btn" style="padding: 0.8rem 2.5rem;" onclick="startQuiz()">開始測驗</button>
-      </div>
-
-      <div class="card quiz-container hidden" id="quiz-running-box">
-        <div style="text-align: right; color: var(--text-muted);" id="quiz-progress">題號 1 / 5</div>
-        <div style="font-size: 2.2rem; font-weight: 700; margin: 1.5rem 0;" id="quiz-question-display">Word</div>
-        <div id="quiz-sub-prompt" style="color: var(--text-muted); margin-bottom: 1rem;"></div>
-
-        <div class="options-grid" id="quiz-options-container"></div>
-
-        <div id="quiz-input-container" class="hidden">
-          <input type="text" id="quiz-type-input" placeholder="請輸入對應的英文單字..." style="max-width: 400px; text-align: center; margin-bottom: 1rem;">
-          <br>
-          <button class="btn" onclick="submitInputAnswer()">提交答案</button>
-        </div>
-      </div>
-
-      <div class="card hidden" id="quiz-result-box">
-        <h2>📊 測驗結算與考後反省</h2>
-        <p id="quiz-score-summary" style="font-size: 1.1rem; font-weight: 600;"></p>
-        <div id="wrong-words-container"></div>
-        <br>
-        <button class="btn" onclick="startQuiz()">再測一次</button>
+      <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
+        <button class="btn btn-secondary" onclick="closeEditModal()">取消</button>
+        <button class="btn" onclick="saveEditedWord()">💾 儲存修改</button>
       </div>
     </div>
   </div>
 
-<script>
-  const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxZwWXsVIZ8BkXgxsU_X4kBfeVzKtrvqzpmZi_NWXkHogd2MGW5_lTJmcxelajCVIad/exec";
+  <script>
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxZwWXsVIZ8BkXgxsU_X4kBfeVzKtrvqzpmZi_NWXkHogd2MGW5_lTJmcxelajCVIad/exec";
 
-  let currentUser = "";
-  let vocabData = [];
-  let currentQuizType = "choice_en_zh";
-  let currentQuizIndex = 0;
-  let currentQuizQuestions = [];
-  let wrongAnswers = [];
+    let currentUser = "";
+    let vocabData = [];
+    let currentQuizType = "choice_en_zh";
+    let currentQuizIndex = 0;
+    let currentQuizQuestions = [];
+    let wrongAnswers = [];
 
-  async function login() {
-    const input = document.getElementById("username-input");
-    if (!input) return alert("找不到輸入框！");
-    
-    const username = input.value.trim();
-    if (!username) return alert("請輸入使用者名稱！");
+    async function login() {
+      const input = document.getElementById("username-input");
+      if (!input) return alert("找不到輸入框！");
+      
+      const username = input.value.trim();
+      if (!username) return alert("請輸入使用者名稱！");
 
-    currentUser = username;
-    
-    const userDisplay = document.getElementById("current-user-display");
-    if (userDisplay) userDisplay.innerText = `👤 ${currentUser}`;
-    
-    document.getElementById("auth-section").classList.add("hidden");
-    document.getElementById("app-nav").classList.remove("hidden");
-    
-    await loadUserDataFromCloud();
-    switchTab('list');
-  }
-
-  function logout() {
-    currentUser = "";
-    vocabData = [];
-    document.getElementById("auth-section").classList.remove("hidden");
-    document.getElementById("app-nav").classList.add("hidden");
-    document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
-  }
-
-  // ☁️ 讀取雲端單字
-  async function loadUserDataFromCloud() {
-    setSyncStatus("⏳ 正在連接 Google 試算表...");
-    const targetUrl = `${GAS_API_URL}?user=${encodeURIComponent(currentUser)}&t=${Date.now()}`;
-
-    try {
-      const res = await fetch(targetUrl, { method: "GET", redirect: "follow" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      const cloudData = await res.json();
-      if (Array.isArray(cloudData)) {
-        vocabData = cloudData;
-        setSyncStatus(`✅ 成功載入 ${vocabData.length} 個單字！`);
-      } else {
-        throw new Error("格式錯誤");
-      }
-    } catch (err) {
-      console.error("載入失敗:", err);
-      setSyncStatus(`❌ 讀取失敗 (${err.message}) - 使用本機備份`);
-      const local = localStorage.getItem(`vocab_data_${currentUser}`);
-      vocabData = local ? JSON.parse(local) : [];
+      currentUser = username;
+      
+      const userDisplay = document.getElementById("current-user-display");
+      if (userDisplay) userDisplay.innerText = `👤 ${currentUser}`;
+      
+      document.getElementById("auth-section").classList.add("hidden");
+      document.getElementById("app-nav").classList.remove("hidden");
+      
+      await loadUserDataFromCloud();
+      switchTab('list');
     }
-    renderWordList();
-  }
 
-  // ☁️ 儲存單字至雲端
-  async function saveUserDataToCloud() {
-    localStorage.setItem(`vocab_data_${currentUser}`, JSON.stringify(vocabData));
-    setSyncStatus("⏳ 正在寫入 Google 試算表...");
-    
-    try {
-      const res = await fetch(GAS_API_URL, {
-        method: "POST",
-        redirect: "follow",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: "saveAll", user: currentUser, data: vocabData })
-      });
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      const result = await res.json();
-      if (result.status === "success") {
-        setSyncStatus("✅ 單字已成功同步寫入雲端！");
-      } else {
-        setSyncStatus(`⚠️ 後端訊息: ${result.message || '寫入異常'}`);
-      }
-    } catch (err) {
-      console.error("儲存失敗:", err);
-      setSyncStatus(`❌ 同步失敗 (${err.message}) - 已存於本機`);
+    function logout() {
+      currentUser = "";
+      vocabData = [];
+      document.getElementById("current-user-display").innerText = "未登入";
+      document.getElementById("auth-section").classList.remove("hidden");
+      document.getElementById("app-nav").classList.add("hidden");
+      document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
     }
-  }
 
-  function setSyncStatus(msg) {
-    const el = document.getElementById("sync-indicator");
-    if (el) el.innerText = msg;
-  }
+    async function loadUserDataFromCloud() {
+      setSyncStatus("⏳ 正在連接 Google 試算表...");
+      const targetUrl = `${GAS_API_URL}?user=${encodeURIComponent(currentUser)}&t=${Date.now()}`;
 
-  function switchTab(tabName) {
-    document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
-    document.querySelectorAll(".nav-btn").forEach(el => el.classList.remove("active"));
-    
-    if (tabName === 'list') {
-      document.getElementById("list-tab").classList.remove("hidden");
+      try {
+        const res = await fetch(targetUrl, { method: "GET", redirect: "follow" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const cloudData = await res.json();
+        if (Array.isArray(cloudData)) {
+          vocabData = cloudData;
+          setSyncStatus(`✅ 已成功載入 ${vocabData.length} 個雲端單字！`);
+        } else {
+          throw new Error("格式錯誤");
+        }
+      } catch (err) {
+        console.error("載入失敗:", err);
+        setSyncStatus(`❌ 讀取失敗 (${err.message}) - 已載入本機備份`);
+        const local = localStorage.getItem(`vocab_data_${currentUser}`);
+        vocabData = local ? JSON.parse(local) : [];
+      }
       renderWordList();
-    } else if (tabName === 'add') {
-      document.getElementById("add-tab").classList.remove("hidden");
-    } else if (tabName === 'quiz') {
-      document.getElementById("quiz-tab").classList.remove("hidden");
-      resetQuizUI();
-    }
-  }
-
-  function openQuickLookup() {
-    const word = document.getElementById("word-spelling").value.trim().toLowerCase();
-    if (!word) return alert("請先輸入英文單字！");
-    window.open(`https://dictionary.cambridge.org/zht/dictionary/english-chinese-traditional/${encodeURIComponent(word)}`, '_blank');
-  }
-
-  function lookupDictionary(word) {
-    window.open(`https://dictionary.cambridge.org/zht/dictionary/english-chinese-traditional/${encodeURIComponent(word.toLowerCase())}`, '_blank');
-  }
-
-  // ⚡ 自動帶入釋義與例句
-  async function autoFetchDetails() {
-    const word = document.getElementById("word-spelling").value.trim().toLowerCase();
-    const msg = document.getElementById("auto-fetch-msg");
-    
-    if (!word) return alert("請先輸入英文單字！");
-
-    if (msg) {
-      msg.style.color = "var(--primary)";
-      msg.innerText = "⏳ 查詢中...";
     }
 
-    document.querySelectorAll('input[name="pos"]').forEach(cb => cb.checked = false);
+    async function saveUserDataToCloud() {
+      localStorage.setItem(`vocab_data_${currentUser}`, JSON.stringify(vocabData));
+      setSyncStatus("⏳ 正在寫入 Google 試算表...");
+      
+      try {
+        const res = await fetch(GAS_API_URL, {
+          method: "POST",
+          redirect: "follow",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "saveAll", user: currentUser, data: vocabData })
+        });
 
-    try {
-      const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|zh-TW`);
-      if (transRes.ok) {
-        const transData = await transRes.json();
-        if (transData?.responseData?.translatedText) {
-          document.getElementById("word-meaning").value = transData.responseData.translatedText;
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const result = await res.json();
+        if (result.status === "success") {
+          setSyncStatus("✅ 單字已成功同步寫入雲端！");
+        } else {
+          setSyncStatus(`⚠️ 後端訊息: ${result.message || '寫入異常'}`);
         }
+      } catch (err) {
+        console.error("儲存失敗:", err);
+        setSyncStatus(`❌ 同步失敗 (${err.message}) - 已存於本機`);
+      }
+    }
+
+    function setSyncStatus(msg) {
+      const el = document.getElementById("sync-indicator");
+      if (el) el.innerText = msg;
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+      document.querySelectorAll(".nav-btn").forEach(el => el.classList.remove("active"));
+      
+      const btns = document.querySelectorAll(".nav-btn");
+      if (tabName === 'list') {
+        document.getElementById("list-tab").classList.remove("hidden");
+        if(btns[0]) btns[0].classList.add("active");
+        renderWordList();
+      } else if (tabName === 'add') {
+        document.getElementById("add-tab").classList.remove("hidden");
+        if(btns[1]) btns[1].classList.add("active");
+      } else if (tabName === 'quiz') {
+        document.getElementById("quiz-tab").classList.remove("hidden");
+        if(btns[2]) btns[2].classList.add("active");
+        resetQuizUI();
+      }
+    }
+
+    function openQuickLookup() {
+      const word = document.getElementById("word-spelling").value.trim().toLowerCase();
+      if (!word) return alert("請先輸入英文單字！");
+      window.open(`https://dictionary.cambridge.org/zht/dictionary/english-chinese-traditional/${encodeURIComponent(word)}`, '_blank');
+    }
+
+    function lookupDictionary(word) {
+      window.open(`https://dictionary.cambridge.org/zht/dictionary/english-chinese-traditional/${encodeURIComponent(word.toLowerCase())}`, '_blank');
+    }
+
+    async function autoFetchDetails() {
+      const word = document.getElementById("word-spelling").value.trim().toLowerCase();
+      const msg = document.getElementById("auto-fetch-msg");
+      
+      if (!word) return alert("請先輸入英文單字！");
+
+      if (msg) {
+        msg.style.color = "var(--primary)";
+        msg.innerText = "⏳ 正在查詢翻譯與字典...";
       }
 
-      const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+      document.querySelectorAll('input[name="pos"]').forEach(cb => cb.checked = false);
 
-      if (dictRes.status === 404) {
-        if (msg) {
-          msg.style.color = "var(--warning)";
-          msg.innerText = "⚠️ 翻譯已帶入，但無詞性例句資料";
+      try {
+        const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|zh-TW`);
+        if (transRes.ok) {
+          const transData = await transRes.json();
+          if (transData?.responseData?.translatedText) {
+            document.getElementById("word-meaning").value = transData.responseData.translatedText;
+          }
         }
-        return;
-      }
 
-      if (dictRes.ok) {
-        const dictData = await dictRes.json();
-        if (Array.isArray(dictData) && dictData[0]?.meanings) {
-          dictData[0].meanings.forEach(m => {
-            const p = m.partOfSpeech ? m.partOfSpeech.toLowerCase() : "";
-            if (p.includes("noun")) checkPosCheckbox("n.");
-            if (p.includes("verb")) checkPosCheckbox("v.");
-            if (p.includes("adjective")) checkPosCheckbox("adj.");
-            if (p.includes("adverb")) checkPosCheckbox("adv.");
-            if (p.includes("preposition")) checkPosCheckbox("prep.");
-            if (p.includes("conjunction")) checkPosCheckbox("conj.");
-          });
+        const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
 
-          for (let m of dictData[0].meanings) {
-            if (m.definitions) {
-              const defWithEx = m.definitions.find(d => d.example);
-              if (defWithEx) {
-                document.getElementById("word-sentence").value = defWithEx.example;
-                break;
+        if (dictRes.status === 404) {
+          if (msg) {
+            msg.style.color = "var(--warning)";
+            msg.innerText = "⚠️ 翻譯已帶入，無詞性資料";
+          }
+          return;
+        }
+
+        if (dictRes.ok) {
+          const dictData = await dictRes.json();
+          if (Array.isArray(dictData) && dictData[0]?.meanings) {
+            dictData[0].meanings.forEach(m => {
+              const p = m.partOfSpeech ? m.partOfSpeech.toLowerCase() : "";
+              if (p.includes("noun")) checkPosCheckbox("n.");
+              if (p.includes("verb")) checkPosCheckbox("v.");
+              if (p.includes("adjective")) checkPosCheckbox("adj.");
+              if (p.includes("adverb")) checkPosCheckbox("adv.");
+              if (p.includes("preposition")) checkPosCheckbox("prep.");
+              if (p.includes("conjunction")) checkPosCheckbox("conj.");
+            });
+
+            for (let m of dictData[0].meanings) {
+              if (m.definitions) {
+                const defWithEx = m.definitions.find(d => d.example);
+                if (defWithEx) {
+                  document.getElementById("word-sentence").value = defWithEx.example;
+                  break;
+                }
               }
             }
           }
         }
+
+        if (msg) {
+          msg.style.color = "var(--success)";
+          msg.innerText = "✅ 自動帶入成功！";
+        }
+
+      } catch (err) {
+        console.error("AutoFetch Error:", err);
+        if (msg) {
+          msg.style.color = "var(--danger)";
+          msg.innerText = `❌ 出錯: ${err.message}`;
+        }
+      }
+    }
+
+    function checkPosCheckbox(val) {
+      const cb = document.querySelector(`input[name="pos"][value="${val}"]`);
+      if (cb) cb.checked = true;
+    }
+
+    function renderWordList() {
+      const container = document.getElementById("word-list");
+      if (!container) return;
+      
+      const keyword = document.getElementById("search-input") ? document.getElementById("search-input").value.toLowerCase() : "";
+      const filter = document.getElementById("filter-select") ? document.getElementById("filter-select").value : "all";
+
+      container.innerHTML = "";
+      let filtered = vocabData.filter(item => {
+        const matchesKey = item.word.toLowerCase().includes(keyword) || item.meaning.includes(keyword);
+        const matchesFilter = filter === 'all' || (filter === 'error' && item.isError);
+        return matchesKey && matchesFilter;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<p style="grid-column: 1/-1; color: var(--text-muted);">尚無單字資料。</p>`;
+        return;
       }
 
-      if (msg) {
-        msg.style.color = "var(--success)";
-        msg.innerText = "✅ 自動帶入成功！";
-      }
-
-    } catch (err) {
-      console.error("AutoFetch Error:", err);
-      if (msg) {
-        msg.style.color = "var(--danger)";
-        msg.innerText = `❌ 出錯: ${err.message}`;
-      }
-    }
-  }
-
-  function checkPosCheckbox(val) {
-    const cb = document.querySelector(`input[name="pos"][value="${val}"]`);
-    if (cb) cb.checked = true;
-  }
-
-  function renderWordList() {
-    const container = document.getElementById("word-list");
-    if (!container) return;
-    
-    const keyword = document.getElementById("search-input") ? document.getElementById("search-input").value.toLowerCase() : "";
-    const filter = document.getElementById("filter-select") ? document.getElementById("filter-select").value : "all";
-
-    container.innerHTML = "";
-    let filtered = vocabData.filter(item => {
-      const matchesKey = item.word.toLowerCase().includes(keyword) || item.meaning.includes(keyword);
-      const matchesFilter = filter === 'all' || (filter === 'error' && item.isError);
-      return matchesKey && matchesFilter;
-    });
-
-    if (filtered.length === 0) {
-      container.innerHTML = `<p style="grid-column: 1/-1; color: var(--text-muted);">尚無單字資料。</p>`;
-      return;
-    }
-
-    filtered.forEach(item => {
-      const card = document.createElement("div");
-      card.className = `word-card ${item.isError ? 'error-marked' : ''}`;
-      card.innerHTML = `
-        <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.3rem;">
-          ${item.word} ${item.isError ? '<span class="badge badge-error">易錯</span>' : ''}
-        </div>
-        <div style="margin-bottom: 0.5rem;">
-          <span class="badge badge-pos">${item.pos || '未指定'}</span>
-          <span style="font-weight: 500;">${item.meaning}</span>
-        </div>
-        ${item.sentence ? `<p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">💬 ${item.sentence}</p>` : ''}
-        <div style="margin-top: 1rem; display: flex; gap: 0.3rem; flex-wrap: wrap;">
-          <button class="btn btn-secondary" style="padding: 0.3rem 0.5rem; font-size: 0.8rem;" onclick="lookupDictionary('${item.word}')">🔍 字典</button>
-          <button class="btn btn-secondary" style="padding: 0.3rem 0.5rem; font-size: 0.8rem;" onclick="toggleError('${item.id}')">
-            ${item.isError ? '取消易錯' : '標註易錯'}
-          </button>
-          <button class="btn btn-danger" style="padding: 0.3rem 0.5rem; font-size: 0.8rem; margin-left: auto;" onclick="deleteWord('${item.id}')">刪除</button>
-        </div>
-      `;
-      container.appendChild(card);
-    });
-  }
-
-  // ➕ 新增單字（支援多詞性組合）
-  async function addWord(e) {
-    e.preventDefault();
-    const spelling = document.getElementById("word-spelling").value.trim();
-    const meaning = document.getElementById("word-meaning").value.trim();
-    const sentence = document.getElementById("word-sentence").value.trim();
-
-    const selectedPos = Array.from(document.querySelectorAll('input[name="pos"]:checked'))
-                             .map(cb => cb.value);
-    const posStr = selectedPos.length > 0 ? selectedPos.join(", ") : "其他";
-
-    vocabData.push({ 
-      id: Date.now().toString(), 
-      word: spelling, 
-      pos: posStr, 
-      meaning: meaning, 
-      sentence: sentence, 
-      isError: false 
-    });
-
-    renderWordList();
-    await saveUserDataToCloud();
-    
-    alert("單字成功儲存並同步至雲端！");
-    document.getElementById("add-word-form").reset();
-    document.querySelectorAll('input[name="pos"]').forEach(cb => cb.checked = false);
-    if(document.getElementById("auto-fetch-msg")) document.getElementById("auto-fetch-msg").innerText = "";
-    switchTab('list');
-  }
-
-  async function deleteWord(id) {
-    if (confirm("確定要刪除此單字？")) {
-      vocabData = vocabData.filter(i => String(i.id) !== String(id));
-      renderWordList();
-      await saveUserDataToCloud();
-    }
-  }
-
-  async function toggleError(id) {
-    const item = vocabData.find(i => String(i.id) === String(id));
-    if (item) {
-      item.isError = !item.isError;
-      renderWordList();
-      await saveUserDataToCloud();
-    }
-  }
-
-  function selectQuizType(type, el) {
-    currentQuizType = type;
-    document.querySelectorAll(".type-card").forEach(c => c.classList.remove("selected"));
-    el.classList.add("selected");
-  }
-
-  function resetQuizUI() {
-    document.getElementById("quiz-start-box").classList.remove("hidden");
-    document.getElementById("quiz-running-box").classList.add("hidden");
-    document.getElementById("quiz-result-box").classList.add("hidden");
-  }
-
-  function startQuiz() {
-    if (vocabData.length < 2) return alert("單字庫至少需要有 2 個單字才能開始測驗！");
-    currentQuizQuestions = [...vocabData].sort(() => 0.5 - Math.random()).slice(0, 5);
-    currentQuizIndex = 0;
-    wrongAnswers = [];
-
-    document.getElementById("quiz-start-box").classList.add("hidden");
-    document.getElementById("quiz-result-box").classList.add("hidden");
-    document.getElementById("quiz-running-box").classList.remove("hidden");
-    showNextQuestion();
-  }
-
-  function showNextQuestion() {
-    if (currentQuizIndex >= currentQuizQuestions.length) return finishQuiz();
-
-    const q = currentQuizQuestions[currentQuizIndex];
-    document.getElementById("quiz-progress").innerText = `題號 ${currentQuizIndex + 1} / ${currentQuizQuestions.length}`;
-    
-    const optionsContainer = document.getElementById("quiz-options-container");
-    const inputContainer = document.getElementById("quiz-input-container");
-    optionsContainer.classList.add("hidden");
-    inputContainer.classList.add("hidden");
-
-    if (currentQuizType === 'choice_en_zh') {
-      document.getElementById("quiz-question-display").innerText = q.word;
-      document.getElementById("quiz-sub-prompt").innerText = `請選擇正確中文（詞性：${q.pos}）`;
-      optionsContainer.classList.remove("hidden");
-      renderOptions(q, 'meaning');
-    } else if (currentQuizType === 'choice_zh_en') {
-      document.getElementById("quiz-question-display").innerText = `${q.pos} ${q.meaning}`;
-      document.getElementById("quiz-sub-prompt").innerText = "請選擇正確英文單字";
-      optionsContainer.classList.remove("hidden");
-      renderOptions(q, 'word');
-    } else if (currentQuizType === 'spelling') {
-      document.getElementById("quiz-question-display").innerText = `${q.pos} ${q.meaning}`;
-      document.getElementById("quiz-sub-prompt").innerText = `請拼寫英文單字 (首字母: ${q.word[0]})`;
-      inputContainer.classList.remove("hidden");
-      document.getElementById("quiz-type-input").value = "";
-      document.getElementById("quiz-type-input").focus();
-    }
-  }
-
-  function renderOptions(q, key) {
-    let options = [q];
-    let others = vocabData.filter(i => String(i.id) !== String(q.id)).sort(() => 0.5 - Math.random());
-    while (options.length < Math.min(4, vocabData.length)) options.push(others.pop());
-    options.sort(() => 0.5 - Math.random());
-
-    const container = document.getElementById("quiz-options-container");
-    container.innerHTML = "";
-    options.forEach(opt => {
-      const btn = document.createElement("button");
-      btn.className = "option-btn";
-      btn.innerText = opt[key];
-      btn.onclick = () => checkAnswer(String(opt.id) === String(q.id), q);
-      container.appendChild(btn);
-    });
-  }
-
-  function submitInputAnswer() {
-    const userInput = document.getElementById("quiz-type-input").value.trim().toLowerCase();
-    const q = currentQuizQuestions[currentQuizIndex];
-    checkAnswer(userInput === q.word.toLowerCase(), q);
-  }
-
-  async function checkAnswer(isCorrect, questionObj) {
-    if (!isCorrect) {
-      const item = vocabData.find(i => String(i.id) === String(questionObj.id));
-      if (item) item.isError = true;
-      wrongAnswers.push(questionObj);
-      await saveUserDataToCloud();
-    }
-    currentQuizIndex++;
-    showNextQuestion();
-  }
-
-  function finishQuiz() {
-    document.getElementById("quiz-running-box").classList.add("hidden");
-    document.getElementById("quiz-result-box").classList.remove("hidden");
-
-    const total = currentQuizQuestions.length;
-    const correct = total - wrongAnswers.length;
-    document.getElementById("quiz-score-summary").innerText = `🎯 得分：${correct} / ${total} (正確率: ${Math.round(correct/total * 100)}%)`;
-
-    const wrongContainer = document.getElementById("wrong-words-container");
-    wrongContainer.innerHTML = "";
-    if (wrongAnswers.length === 0) {
-      wrongContainer.innerHTML = "<p style='color: var(--success); font-weight: 600;'>🎉 太棒了，本次測驗全對！</p>";
-    } else {
-      wrongAnswers.forEach(item => {
-        const div = document.createElement("div");
-        div.style.cssText = "padding: 0.8rem; border-bottom: 1px solid var(--border);";
-        div.innerHTML = `<strong style="color: var(--danger);">${item.word}</strong> (${item.pos}) ${item.meaning}`;
-        wrongContainer.appendChild(div);
+      filtered.forEach(item => {
+        const card = document.createElement("div");
+        card.className = `word-card ${item.isError ? 'error-marked' : ''}`;
+        card.innerHTML = `
+          <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.3rem;">
+            ${item.word} ${item.isError ? '<span class="badge badge-error">易錯</span>' : ''}
+          </div>
+          <div style="margin-bottom: 0.5rem;">
+            <span class="badge badge-pos">${item.pos || '未指定'}</span>
+            <span style="font-weight: 500; white-space: pre-line;">${item.meaning}</span>
+          </div>
+          ${item.sentence ? `<p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">💬 ${item.sentence}</p>` : ''}
+          <div style="margin-top: 1rem; display: flex; gap: 0.3rem; flex-wrap: wrap;">
+            <button class="btn btn-secondary" style="padding: 0.3rem 0.5rem; font-size: 0.8rem;" onclick="lookupDictionary('${item.word}')">🔍 字典</button>
+            <button class="btn btn-secondary" style="padding: 0.3rem 0.5rem; font-size: 0.8rem;" onclick="openEditModal('${item.id}')">✏️ 編輯釋義</button>
+            <button class="btn btn-secondary" style="padding: 0.3rem 0.5rem; font-size: 0.8rem;" onclick="toggleError('${item.id}')">
+              ${item.isError ? '取消標註' : '標註易錯'}
+            </button>
+            <button class="btn btn-danger" style="padding: 0.3rem 0.5rem; font-size: 0.8rem; margin-left: auto;" onclick="deleteWord('${item.id}')">刪除</button>
+          </div>
+        `;
+        container.appendChild(card);
       });
     }
-  }
-</script>
+
+    async function addWord(e) {
+      e.preventDefault();
+      const spelling = document.getElementById("word-spelling").value.trim();
+      const meaning = document.getElementById("word-meaning").value.trim();
+      const sentence = document.getElementById("word-sentence").value.trim();
+
+      const selectedPos = Array.from(document.querySelectorAll('input[name="pos"]:checked'))
+                               .map(cb => cb.value);
+      const posStr = selectedPos.length > 0 ? selectedPos.join(", ") : "其他";
+
+      vocabData.push({ 
+        id: Date.now().toString(), 
+        word: spelling, 
+        pos: posStr, 
+        meaning: meaning, 
+        sentence: sentence, 
+        isError: false 
+      });
+
+      renderWordList();
+      await saveUserDataToCloud();
+      
+      alert("單字成功儲存並同步至雲端！");
+      document.getElementById("add-word-form").reset();
+      document.querySelectorAll('input[name="pos"]').forEach(cb => cb.checked = false);
+      if(document.getElementById("auto-fetch-msg")) document.getElementById("auto-fetch-msg").innerText = "";
+      switchTab('list');
+    }
+
+    // ✏️ 打開編輯 Modal
+    function openEditModal(id) {
+      const item = vocabData.find(i => String(i.id) === String(id));
+      if (!item) return;
+
+      document.getElementById("edit-word-id").value = item.id;
+      document.getElementById("edit-word-spelling").value = item.word;
+      document.getElementById("edit-word-pos").value = item.pos || "";
+      document.getElementById("edit-word-meaning").value = item.meaning || "";
+      document.getElementById("edit-word-sentence").value = item.sentence || "";
+
+      document.getElementById("edit-modal").classList.remove("hidden");
+    }
+
+    function closeEditModal() {
+      document.getElementById("edit-modal").classList.add("hidden");
+    }
+
+    // 💾 儲存修改後的單字
+    async function saveEditedWord() {
+      const id = document.getElementById("edit-word-id").value;
+      const item = vocabData.find(i => String(i.id) === String(id));
+      
+      if (item) {
+        item.pos = document.getElementById("edit-word-pos").value.trim();
+        item.meaning = document.getElementById("edit-word-meaning").value.trim();
+        item.sentence = document.getElementById("edit-word-sentence").value.trim();
+
+        closeEditModal();
+        renderWordList();
+        await saveUserDataToCloud();
+      }
+    }
+
+    async function deleteWord(id) {
+      if (confirm("確定要刪除此單字？")) {
+        vocabData = vocabData.filter(i => String(i.id) !== String(id));
+        renderWordList();
+        await saveUserDataToCloud();
+      }
+    }
+
+    async function toggleError(id) {
+      const item = vocabData.find(i => String(i.id) === String(id));
+      if (item) {
+        item.isError = !item.isError;
+        renderWordList();
+        await saveUserDataToCloud();
+      }
+    }
+
+    function selectQuizType(type, el) {
+      currentQuizType = type;
+      document.querySelectorAll(".type-card").forEach(c => c.classList.remove("selected"));
+      el.classList.add("selected");
+    }
+
+    function resetQuizUI() {
+      document.getElementById("quiz-start-box").classList.remove("hidden");
+      document.getElementById("quiz-running-box").classList.add("hidden");
+      document.getElementById("quiz-result-box").classList.add("hidden");
+    }
+
+    function startQuiz() {
+      if (vocabData.length < 2) return alert("單字庫至少需要有 2 個單字才能開始測驗！");
+      currentQuizQuestions = [...vocabData].sort(() => 0.5 - Math.random()).slice(0, 5);
+      currentQuizIndex = 0;
+      wrongAnswers = [];
+
+      document.getElementById("quiz-start-box").classList.add("hidden");
+      document.getElementById("quiz-result-box").classList.add("hidden");
+      document.getElementById("quiz-running-box").classList.remove("hidden");
+      showNextQuestion();
+    }
+
+    function showNextQuestion() {
+      if (currentQuizIndex >= currentQuizQuestions.length) return finishQuiz();
+
+      const q = currentQuizQuestions[currentQuizIndex];
+      document.getElementById("quiz-progress").innerText = `題號 ${currentQuizIndex + 1} / ${currentQuizQuestions.length}`;
+      
+      const optionsContainer = document.getElementById("quiz-options-container");
+      const inputContainer = document.getElementById("quiz-input-container");
+      optionsContainer.classList.add("hidden");
+      inputContainer.classList.add("hidden");
+
+      if (currentQuizType === 'choice_en_zh') {
+        document.getElementById("quiz-question-display").innerText = q.word;
+        document.getElementById("quiz-sub-prompt").innerText = `請選擇正確中文（詞性：${q.pos}）`;
+        optionsContainer.classList.remove("hidden");
+        renderOptions(q, 'meaning');
+      } else if (currentQuizType === 'choice_zh_en') {
+        document.getElementById("quiz-question-display").innerText = `${q.pos} ${q.meaning}`;
+        document.getElementById("quiz-sub-prompt").innerText = "請選擇正確英文單字";
+        optionsContainer.classList.remove("hidden");
+        renderOptions(q, 'word');
+      } else if (currentQuizType === 'spelling') {
+        document.getElementById("quiz-question-display").innerText = `${q.pos} ${q.meaning}`;
+        document.getElementById("quiz-sub-prompt").innerText = `請拼寫英文單字 (首字母: ${q.word[0]})`;
+        inputContainer.classList.remove("hidden");
+        document.getElementById("quiz-type-input").value = "";
+        document.getElementById("quiz-type-input").focus();
+      }
+    }
+
+    function renderOptions(q, key) {
+      let options = [q];
+      let others = vocabData.filter(i => String(i.id) !== String(q.id)).sort(() => 0.5 - Math.random());
+      while (options.length < Math.min(4, vocabData.length)) options.push(others.pop());
+      options.sort(() => 0.5 - Math.random());
+
+      const container = document.getElementById("quiz-options-container");
+      container.innerHTML = "";
+      options.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.className = "option-btn";
+        btn.innerText = opt[key];
+        btn.onclick = () => checkAnswer(String(opt.id) === String(q.id), q);
+        container.appendChild(btn);
+      });
+    }
+
+    function submitInputAnswer() {
+      const userInput = document.getElementById("quiz-type-input").value.trim().toLowerCase();
+      const q = currentQuizQuestions[currentQuizIndex];
+      checkAnswer(userInput === q.word.toLowerCase(), q);
+    }
+
+    async function checkAnswer(isCorrect, questionObj) {
+      if (!isCorrect) {
+        const item = vocabData.find(i => String(i.id) === String(questionObj.id));
+        if (item) item.isError = true;
+        wrongAnswers.push(questionObj);
+        await saveUserDataToCloud();
+      }
+      currentQuizIndex++;
+      showNextQuestion();
+    }
+
+    function finishQuiz() {
+      document.getElementById("quiz-running-box").classList.add("hidden");
+      document.getElementById("quiz-result-box").classList.remove("hidden");
+
+      const total = currentQuizQuestions.length;
+      const correct = total - wrongAnswers.length;
+      document.getElementById("quiz-score-summary").innerText = `🎯 得分：${correct} / ${total} (正確率: ${Math.round(correct/total * 100)}%)`;
+
+      const wrongContainer = document.getElementById("wrong-words-container");
+      wrongContainer.innerHTML = "";
+      if (wrongAnswers.length === 0) {
+        wrongContainer.innerHTML = "<p style='color: var(--success); font-weight: 600;'>🎉 太棒了，本次測驗全對！</p>";
+      } else {
+        wrongAnswers.forEach(item => {
+          const div = document.createElement("div");
+          div.style.cssText = "padding: 0.8rem; border-bottom: 1px solid var(--border);";
+          div.innerHTML = `<strong style="color: var(--danger);">${item.word}</strong> (${item.pos}) ${item.meaning}`;
+          wrongContainer.appendChild(div);
+        });
+      }
+    }
+  </script>
 </body>
 </html>
