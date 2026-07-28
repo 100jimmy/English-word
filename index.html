@@ -238,36 +238,65 @@
       document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
     }
 
-    async function loadUserDataFromCloud() {
-      setSyncStatus("☁️ 正在連線雲端資料庫...");
-      try {
-        const res = await fetch(`${GAS_API_URL}?user=${encodeURIComponent(currentUser)}`);
-        const cloudData = await res.json();
-        vocabData = cloudData || [];
-        setSyncStatus("✅ 雲端資料已同步");
-      } catch (err) {
-        console.error(err);
-        setSyncStatus("⚠️ 連線失敗，使用本機快取");
-        const local = localStorage.getItem(`vocab_data_${currentUser}`);
-        vocabData = local ? JSON.parse(local) : [];
-      }
-      renderWordList();
+    // ☁️ 1. 從雲端載入資料（超細緻除錯版）
+async function loadUserDataFromCloud() {
+  setSyncStatus("⏳ [1/2] 正在連接 Google 試算表讀取資料...");
+  try {
+    const res = await fetch(`${GAS_API_URL}?user=${encodeURIComponent(currentUser)}`);
+    
+    if (!res.ok) {
+      throw new Error(`Google 伺服器拒絕存取 (HTTP ${res.status})`);
     }
 
-    async function saveUserDataToCloud() {
-      localStorage.setItem(`vocab_data_${currentUser}`, JSON.stringify(vocabData));
-      setSyncStatus("☁️ 正在同步到雲端...");
-      try {
-        await fetch(GAS_API_URL, {
-          method: "POST",
-          body: JSON.stringify({ action: "saveAll", user: currentUser, data: vocabData })
-        });
-        setSyncStatus("✅ 已同步至雲端試算表");
-      } catch (err) {
-        console.error(err);
-        setSyncStatus("⚠️ 雲端同步失敗");
-      }
+    setSyncStatus("⏳ [2/2] 正在解析雲端單字資料...");
+    const cloudData = await res.json();
+    
+    // 檢查回傳的是否為陣列結構
+    if (Array.isArray(cloudData)) {
+      vocabData = cloudData;
+      setSyncStatus(`✅ 已成功載入 ${vocabData.length} 個雲端單字！`);
+    } else {
+      throw new Error("雲端回傳資料格式不符 (非陣列)");
     }
+  } catch (err) {
+    console.error("載入失敗詳情:", err);
+    setSyncStatus(`❌ 雲端讀取失敗: ${err.message} (已切換至本機暫存)`);
+    const local = localStorage.getItem(`vocab_data_${currentUser}`);
+    vocabData = local ? JSON.parse(local) : [];
+  }
+  renderWordList();
+}
+
+// ☁️ 2. 儲存資料至雲端（超細緻除錯版）
+async function saveUserDataToCloud() {
+  localStorage.setItem(`vocab_data_${currentUser}`, JSON.stringify(vocabData));
+  
+  setSyncStatus("⏳ [1/2] 正在同步資料至 Google 試算表...");
+  
+  try {
+    const res = await fetch(GAS_API_URL, {
+      method: "POST",
+      // 注意：不要加 headers Content-Type，避免觸發瀏覽器 CORS Preflight 攔截
+      body: JSON.stringify({ action: "saveAll", user: currentUser, data: vocabData })
+    });
+
+    if (!res.ok) {
+      throw new Error(`Google 伺服器拒絕寫入 (HTTP ${res.status})`);
+    }
+
+    const result = await res.json();
+    if (result.status === "success") {
+      setSyncStatus("✅ 單字已成功同步寫入雲端！");
+    } else {
+      setSyncStatus(`⚠️ GAS 後端執行出錯: ${result.message || '未知錯誤'}`);
+    }
+
+  } catch (err) {
+    console.error("儲存失敗詳情:", err);
+    setSyncStatus(`❌ 雲端同步失敗: ${err.message} (已先存至本機)`);
+  }
+}
+
 
     function setSyncStatus(msg) {
       document.getElementById("sync-indicator").innerText = msg;
