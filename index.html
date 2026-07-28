@@ -80,7 +80,7 @@
 
   <header>
     <div style="display: flex; align-items: center;">
-      <h1>VocabMaster v7.0</h1>
+      <h1>VocabMaster v7.1</h1>
       <span id="sync-indicator" class="sync-status"></span>
     </div>
     <div id="user-info">
@@ -91,7 +91,7 @@
 
   <div class="container">
     <div id="auth-section" class="card">
-      <h2 style="margin-top:0;">☁️ 歡迎使用雲端單字庫 (精細多釋義版)</h2>
+      <h2 style="margin-top:0;">☁️ 歡迎使用雲端單字庫 (中文多釋義版)</h2>
       <p style="color: var(--text-muted); margin-bottom: 1rem;">輸入名字即可從 Google 雲端載入您的專屬單字：</p>
       <div class="form-group">
         <input type="text" id="username-input" placeholder="例如: Alex" onkeydown="if(event.key==='Enter') login()" />
@@ -118,14 +118,14 @@
 
     <div id="add-tab" class="tab-content hidden">
       <div class="card">
-        <h2 style="margin-top:0;">➕ 新增英文單字 (支援多詞性詳細註釋)</h2>
+        <h2 style="margin-top:0;">➕ 新增英文單字 (支援中文多詞性)</h2>
         <form id="add-word-form" onsubmit="addWord(event)">
           <div class="form-group">
             <label>英文單字</label>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
               <input type="text" id="word-spelling" required placeholder="例如: last" style="flex: 1; min-width: 200px;">
               <button type="button" class="btn btn-secondary" style="white-space: nowrap; padding: 0.8rem 1rem;" onclick="autoFetchDetails()">
-                ⚡ 自動解析多重釋義
+                ⚡ 自動抓取中文釋義
               </button>
               <button type="button" class="btn btn-secondary" style="white-space: nowrap; padding: 0.8rem 1rem;" onclick="openQuickLookup()">
                 🔍 查劍橋字典
@@ -139,9 +139,7 @@
               <label style="margin:0;">詞性與中文解釋 (可增加多組)</label>
               <button type="button" class="btn btn-secondary" style="padding: 0.2rem 0.6rem; font-size: 0.8rem;" onclick="addMeaningRow('add-meanings-container')">➕ 新增一組詞性</button>
             </div>
-            <div id="add-meanings-container">
-              <!-- 動態生成詞性輸入列 -->
-            </div>
+            <div id="add-meanings-container"></div>
           </div>
 
           <div class="form-group">
@@ -234,12 +232,11 @@
 
     const POS_OPTIONS = ["v.", "n.", "adj.", "adv.", "prep.", "conj.", "phr.", "其他"];
 
-    // 初始化頁面時建立預設一組欄位
     window.onload = () => {
       addMeaningRow('add-meanings-container');
     };
 
-    function addMeaningRow(containerId, pos = "v.", meaning = "") {
+    function addMeaningRow(containerId, pos = "adj.", meaning = "") {
       const container = document.getElementById(containerId);
       if (!container) return;
 
@@ -250,7 +247,7 @@
 
       row.innerHTML = `
         <select class="pos-select">${optionsHtml}</select>
-        <input type="text" class="meaning-input" placeholder="中文解釋 (如: 持續)" value="${meaning}">
+        <input type="text" class="meaning-input" placeholder="中文解釋 (例如: 最後的)" value="${meaning}">
         <button type="button" class="btn btn-secondary" style="padding: 0.5rem; color: var(--danger);" onclick="removeMeaningRow(this)">✕</button>
       `;
 
@@ -319,7 +316,6 @@
 
         const cloudData = await res.json();
         if (Array.isArray(cloudData)) {
-          // 相容舊資料格式（若無 meanings 陣列，自動轉成新格式）
           vocabData = cloudData.map(item => {
             if (!item.meanings || !Array.isArray(item.meanings)) {
               return {
@@ -402,6 +398,7 @@
       window.open(`https://dictionary.cambridge.org/zht/dictionary/english-chinese-traditional/${encodeURIComponent(word.toLowerCase())}`, '_blank');
     }
 
+    // 改良版：自動抓取繁體中文翻譯與詞性
     async function autoFetchDetails() {
       const word = document.getElementById("word-spelling").value.trim().toLowerCase();
       const msg = document.getElementById("auto-fetch-msg");
@@ -410,35 +407,29 @@
 
       if (msg) {
         msg.style.color = "var(--primary)";
-        msg.innerText = "⏳ 正在分析字典多重詞性...";
+        msg.innerText = "⏳ 正在抓取繁體中文釋義...";
       }
 
       const container = document.getElementById("add-meanings-container");
       container.innerHTML = "";
 
       try {
+        // 先向英英字典 API 抓詞性結構
+        let posList = [];
         const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
-
         if (dictRes.ok) {
           const dictData = await dictRes.json();
           if (Array.isArray(dictData) && dictData[0]?.meanings) {
-            
-            // 抓取多個詞性
             dictData[0].meanings.forEach(m => {
               const rawPos = m.partOfSpeech ? m.partOfSpeech.toLowerCase() : "";
-              let posMapped = "其他";
-              if (rawPos.includes("verb")) posMapped = "v.";
-              else if (rawPos.includes("noun")) posMapped = "n.";
-              else if (rawPos.includes("adjective")) posMapped = "adj.";
-              else if (rawPos.includes("adverb")) posMapped = "adv.";
-              else if (rawPos.includes("preposition")) posMapped = "prep.";
-              else if (rawPos.includes("conjunction")) posMapped = "conj.";
+              if (rawPos.includes("verb")) posList.push("v.");
+              else if (rawPos.includes("noun")) posList.push("n.");
+              else if (rawPos.includes("adjective")) posList.push("adj.");
+              else if (rawPos.includes("adverb")) posList.push("adv.");
+              else if (rawPos.includes("preposition")) posList.push("prep.");
+              else if (rawPos.includes("conjunction")) posList.push("conj.");
 
-              // 取英文第一條定義輔助
-              const def = m.definitions[0]?.definition || "";
-              addMeaningRow("add-meanings-container", posMapped, def);
-
-              // 尋找例句
+              // 順便抓例句
               const defWithEx = m.definitions.find(d => d.example);
               if (defWithEx && !document.getElementById("word-sentence").value) {
                 document.getElementById("word-sentence").value = defWithEx.example;
@@ -447,22 +438,35 @@
           }
         }
 
-        // 搭配翻譯API取得中文參考
+        // 使用 MyMemory API 抓中文翻譯
         const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|zh-TW`);
         if (transRes.ok) {
           const transData = await transRes.json();
-          if (transData?.responseData?.translatedText && container.children.length === 0) {
-            addMeaningRow("add-meanings-container", "v.", transData.responseData.translatedText);
+          const translatedText = transData?.responseData?.translatedText || "";
+
+          if (translatedText) {
+            // 切割常見逗號隔開的多個中文
+            const parts = translatedText.split(/[,，;；]/).map(s => s.trim()).filter(Boolean);
+            
+            if (posList.length > 0) {
+              // 結合詞性與中文
+              posList.forEach((pos, idx) => {
+                const zh = parts[idx] || parts[0] || translatedText;
+                addMeaningRow("add-meanings-container", pos, zh);
+              });
+            } else {
+              addMeaningRow("add-meanings-container", "adj.", parts[0] || translatedText);
+            }
           }
         }
 
         if (container.children.length === 0) {
-          addMeaningRow("add-meanings-container", "v.", "");
+          addMeaningRow("add-meanings-container", "adj.", "");
         }
 
         if (msg) {
           msg.style.color = "var(--success)";
-          msg.innerText = "✅ 詞性結構分析完成！請微調中文解釋即可。";
+          msg.innerText = "✅ 中文釋義抓取成功！你可以直接點擊預覽或調整文字。";
         }
 
       } catch (err) {
@@ -471,11 +475,10 @@
           msg.style.color = "var(--danger)";
           msg.innerText = `❌ 出錯: ${err.message}`;
         }
-        addMeaningRow("add-meanings-container", "v.", "");
+        addMeaningRow("add-meanings-container", "adj.", "");
       }
     }
 
-    // 渲染卡片 (完整呈現多重詞性標籤)
     function renderWordList() {
       const container = document.getElementById("word-list");
       if (!container) return;
@@ -500,7 +503,6 @@
         const card = document.createElement("div");
         card.className = `word-card ${item.isError ? 'error-marked' : ''}`;
         
-        // 渲染多組詞性與中文
         let meaningsHtml = "";
         if (item.meanings && item.meanings.length > 0) {
           meaningsHtml = item.meanings.map(m => `
@@ -530,7 +532,6 @@
 
         const btnGroup = card.querySelector('.btn-group');
 
-        // 按鈕列
         const btnDict = document.createElement('button');
         btnDict.className = "btn btn-secondary";
         btnDict.style.cssText = "padding: 0.3rem 0.5rem; font-size: 0.8rem;";
@@ -549,7 +550,6 @@
         btnErr.innerText = item.isError ? '取消標註' : '標註易錯';
         btnErr.onclick = () => toggleError(item.id);
 
-        // 平板無跳窗兩段式刪除
         const btnDel = document.createElement('button');
         btnDel.type = "button";
         btnDel.className = "btn btn-danger";
@@ -604,7 +604,6 @@
       const meaningsList = getMeaningsFromContainer("add-meanings-container");
       if (meaningsList.length === 0) return alert("請至少填寫一組詞性與中文解釋！");
 
-      // 相容欄位 (抓第一組作為舊預設值)
       const primaryPos = meaningsList[0].pos;
       const primaryMeaning = meaningsList.map(m => `${m.pos} ${m.meaning}`).join(' ');
 
@@ -642,7 +641,7 @@
       if (item.meanings && item.meanings.length > 0) {
         item.meanings.forEach(m => addMeaningRow("edit-meanings-container", m.pos, m.meaning));
       } else {
-        addMeaningRow("edit-meanings-container", item.pos || "v.", item.meaning || "");
+        addMeaningRow("edit-meanings-container", item.pos || "adj.", item.meaning || "");
       }
 
       document.getElementById("edit-modal").classList.remove("hidden");
@@ -680,7 +679,6 @@
       }
     }
 
-    // 測驗邏輯
     function selectQuizType(type, el) {
       currentQuizType = type;
       document.querySelectorAll(".type-card").forEach(c => c.classList.remove("selected"));
