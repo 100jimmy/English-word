@@ -97,7 +97,7 @@
   <div class="container">
     <!-- 登入區塊 -->
     <div id="auth-section" class="card">
-      <h2 style="margin-top:0;">☁️ 歡迎使用雲端單字庫</h2>
+      <h2 style="margin-top:0;">☁️ 歡迎使用雲端單字庫試1</h2>
       <p style="color: var(--text-muted);">輸入名字即可自動從 Google 雲端載入您的專屬單字：</p>
       <div class="form-group">
         <input type="text" id="username-input" placeholder="例如: Alex" />
@@ -291,55 +291,94 @@
       }
     }
 
-    // ⚡ 自動抓取釋義與例句（補強功能）
-    async function autoFetchDetails() {
-      const word = document.getElementById("word-spelling").value.trim().toLowerCase();
-      const msg = document.getElementById("auto-fetch-msg");
-      if (!word) return alert("請先輸入英文單字！");
+// ⚡ 超細分狀態的自動帶入功能（精準定位卡在哪裡）
+async function autoFetchDetails() {
+  const word = document.getElementById("word-spelling").value.trim().toLowerCase();
+  const msg = document.getElementById("auto-fetch-msg");
+  
+  if (!word) {
+    alert("請先輸入英文單字！");
+    return;
+  }
 
-      msg.style.color = "var(--primary)";
-      msg.innerText = "🔍 正在自動查詢中文翻譯與例句...";
+  // 重置顯示狀態
+  msg.style.color = "var(--primary)";
+  msg.innerText = "⏳ [1/3] 正在準備發送 API 請求...";
 
-      try {
-        // 1. 抓中文翻譯
-        const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|zh-TW`);
-        const transData = await transRes.json();
-        if (transData && transData.responseData) {
-          document.getElementById("word-meaning").value = transData.responseData.translatedText;
+  try {
+    // 步驟 1: 抓取中文翻譯 (MyMemory API)
+    msg.innerText = "⏳ [2/3] 正在請求中文翻譯 API...";
+    let transRes;
+    try {
+      transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|zh-TW`);
+    } catch (networkErr) {
+      throw new Error("翻譯 API 被瀏覽器攔截 (CORS 或網路被擋)");
+    }
+
+    if (!transRes.ok) {
+      throw new Error(`翻譯 API 回應異常 (HTTP 狀態碼: ${transRes.status})`);
+    }
+
+    const transData = await transRes.json();
+    if (transData && transData.responseData && transData.responseData.translatedText) {
+      document.getElementById("word-meaning").value = transData.responseData.translatedText;
+    } else {
+      console.warn("翻譯 API 未回傳有效文字");
+    }
+
+    // 步驟 2: 抓取詞性與例句 (Dictionary API)
+    msg.innerText = "⏳ [3/3] 正在請求英文字典 API (詞性/例句)...";
+    let dictRes;
+    try {
+      dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+    } catch (networkErr) {
+      throw new Error("字典 API 被瀏覽器攔截 (CORS 或網路被擋)");
+    }
+
+    if (dictRes.status === 404) {
+      // 404 代表字典查無此字，但翻譯可能已經成功
+      msg.style.color = "var(--warning)";
+      msg.innerText = "⚠️ 翻譯已帶入，但字典 API 查無此字的詞性與例句 (404)";
+      return;
+    } else if (!dictRes.ok) {
+      throw new Error(`字典 API 回應異常 (HTTP 狀態碼: ${dictRes.status})`);
+    }
+
+    const dictData = await dictRes.json();
+    if (Array.isArray(dictData) && dictData[0] && dictData[0].meanings) {
+      const firstMeaning = dictData[0].meanings[0];
+      
+      // 自動比對並選擇詞性
+      const pos = firstMeaning.partOfSpeech || "";
+      const selectPos = document.getElementById("word-pos");
+      if (pos.includes("noun")) selectPos.value = "n.";
+      else if (pos.includes("verb")) selectPos.value = "v.";
+      else if (pos.includes("adjective")) selectPos.value = "adj.";
+      else if (pos.includes("adverb")) selectPos.value = "adv.";
+      else if (pos.includes("preposition")) selectPos.value = "prep.";
+      else if (pos.includes("conjunction")) selectPos.value = "conj.";
+
+      // 自動尋找含有例句的解釋
+      if (firstMeaning.definitions) {
+        const defWithEx = firstMeaning.definitions.find(d => d.example);
+        if (defWithEx) {
+          document.getElementById("word-sentence").value = defWithEx.example;
         }
-
-        // 2. 抓英文詞性與例句
-        const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
-        if (dictRes.ok) {
-          const dictData = await dictRes.json();
-          if (dictData[0] && dictData[0].meanings) {
-            const firstMeaning = dictData[0].meanings[0];
-            
-            // 自動選詞性
-            const pos = firstMeaning.partOfSpeech;
-            const selectPos = document.getElementById("word-pos");
-            if (pos.includes("noun")) selectPos.value = "n.";
-            else if (pos.includes("verb")) selectPos.value = "v.";
-            else if (pos.includes("adjective")) selectPos.value = "adj.";
-            else if (pos.includes("adverb")) selectPos.value = "adv.";
-
-            // 自動填例句
-            if (firstMeaning.definitions) {
-              const defWithEx = firstMeaning.definitions.find(d => d.example);
-              if (defWithEx) {
-                document.getElementById("word-sentence").value = defWithEx.example;
-              }
-            }
-          }
-        }
-        msg.style.color = "var(--success)";
-        msg.innerText = "✅ 已自動抓取單字資訊！";
-      } catch (err) {
-        console.error(err);
-        msg.style.color = "var(--danger)";
-        msg.innerText = "⚠️ 抓取失敗，請手動輸入。";
       }
     }
+
+    // 全部成功完成
+    msg.style.color = "var(--success)";
+    msg.innerText = "✅ [完成] 釋義、詞性與例句已成功自動帶入！";
+
+  } catch (err) {
+    // 捕捉所有細分錯誤並顯示在畫面上
+    console.error("詳細錯誤記錄:", err);
+    msg.style.color = "var(--danger)";
+    msg.innerText = `❌ 出錯階段：${err.message}`;
+  }
+}
+
 
     // 🔍 開啟劍橋字典
     function lookupDictionary(word) {
