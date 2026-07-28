@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VocabMaster - 雲端單字庫</title>
+  <title>VocabMaster - 雲端多釋義單字庫</title>
   <style>
     :root {
       --primary: #4f46e5;
@@ -51,12 +51,18 @@
     .btn-danger { background: var(--danger); color: white; }
     .btn-danger:hover { background: var(--danger-hover); }
 
-    .grid-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+    .grid-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
     .word-card { background: white; border-radius: var(--radius); padding: 1.2rem; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); position: relative; }
     .word-card.error-marked { border-left: 5px solid var(--danger); }
-    .badge { display: inline-block; padding: 0.2rem 0.5rem; font-size: 0.75rem; font-weight: 700; border-radius: 4px; margin-right: 0.4rem; }
-    .badge-pos { background: var(--primary-light); color: var(--primary); }
-    .badge-error { background: #fee2e2; color: var(--danger); }
+    
+    .meaning-item { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.4rem; font-size: 0.95rem; }
+    .badge { display: inline-block; padding: 0.15rem 0.4rem; font-size: 0.75rem; font-weight: 700; border-radius: 4px; white-space: nowrap; }
+    .badge-pos { background: var(--primary-light); color: var(--primary); border: 1px solid #c7d2fe; }
+    .badge-error { background: #fee2e2; color: var(--danger); margin-left: 0.4rem; }
+
+    .meaning-row { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center; }
+    .meaning-row select { width: 100px; flex-shrink: 0; }
+    .meaning-row input { flex: 1; }
 
     .quiz-container { text-align: center; }
     .quiz-type-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
@@ -67,14 +73,14 @@
     .option-btn:hover { background: var(--primary-light); border-color: var(--primary); }
 
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-    .modal-content { background: white; padding: 1.5rem; border-radius: var(--radius); width: 90%; max-width: 500px; box-shadow: var(--shadow); }
+    .modal-content { background: white; padding: 1.5rem; border-radius: var(--radius); width: 90%; max-width: 550px; box-shadow: var(--shadow); max-height: 90vh; overflow-y: auto; }
   </style>
 </head>
 <body>
 
   <header>
     <div style="display: flex; align-items: center;">
-      <h1>VocabMaster v6.0</h1>
+      <h1>VocabMaster v7.0</h1>
       <span id="sync-indicator" class="sync-status"></span>
     </div>
     <div id="user-info">
@@ -85,8 +91,8 @@
 
   <div class="container">
     <div id="auth-section" class="card">
-      <h2 style="margin-top:0;">☁️ 歡迎使用雲端單字庫 (無對話框版)</h2>
-      <p style="color: var(--text-muted); margin-bottom: 1rem;">輸入名字即可自動從 Google 雲端載入您的專屬單字：</p>
+      <h2 style="margin-top:0;">☁️ 歡迎使用雲端單字庫 (精細多釋義版)</h2>
+      <p style="color: var(--text-muted); margin-bottom: 1rem;">輸入名字即可從 Google 雲端載入您的專屬單字：</p>
       <div class="form-group">
         <input type="text" id="username-input" placeholder="例如: Alex" onkeydown="if(event.key==='Enter') login()" />
       </div>
@@ -101,7 +107,7 @@
 
     <div id="list-tab" class="tab-content hidden">
       <div class="card" style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
-        <input type="text" id="search-input" placeholder="🔍 搜尋單字、解釋..." style="flex: 1; min-width: 200px;" oninput="renderWordList()">
+        <input type="text" id="search-input" placeholder="🔍 搜尋單字、詞性、解釋..." style="flex: 1; min-width: 200px;" oninput="renderWordList()">
         <select id="filter-select" style="width: auto; min-width: 120px;" onchange="renderWordList()">
           <option value="all">顯示全部</option>
           <option value="error">僅顯示易錯</option>
@@ -112,14 +118,14 @@
 
     <div id="add-tab" class="tab-content hidden">
       <div class="card">
-        <h2 style="margin-top:0;">➕ 新增英文單字 (即時同步雲端)</h2>
+        <h2 style="margin-top:0;">➕ 新增英文單字 (支援多詞性詳細註釋)</h2>
         <form id="add-word-form" onsubmit="addWord(event)">
           <div class="form-group">
             <label>英文單字</label>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-              <input type="text" id="word-spelling" required placeholder="例如: try" style="flex: 1; min-width: 200px;">
+              <input type="text" id="word-spelling" required placeholder="例如: last" style="flex: 1; min-width: 200px;">
               <button type="button" class="btn btn-secondary" style="white-space: nowrap; padding: 0.8rem 1rem;" onclick="autoFetchDetails()">
-                ⚡ 自動帶入釋義/例句
+                ⚡ 自動解析多重釋義
               </button>
               <button type="button" class="btn btn-secondary" style="white-space: nowrap; padding: 0.8rem 1rem;" onclick="openQuickLookup()">
                 🔍 查劍橋字典
@@ -129,29 +135,21 @@
           </div>
 
           <div class="form-group">
-            <label>詞性 (可多選)</label>
-            <div id="word-pos-group" style="display: flex; gap: 0.8rem; flex-wrap: wrap; margin-top: 0.4rem; background: #f8fafc; padding: 0.8rem; border-radius: var(--radius); border: 1px solid var(--border);">
-              <label style="font-weight: 500; cursor: pointer;"><input type="checkbox" name="pos" value="n."> n. 名詞</label>
-              <label style="font-weight: 500; cursor: pointer;"><input type="checkbox" name="pos" value="v."> v. 動詞</label>
-              <label style="font-weight: 500; cursor: pointer;"><input type="checkbox" name="pos" value="adj."> adj. 形容詞</label>
-              <label style="font-weight: 500; cursor: pointer;"><input type="checkbox" name="pos" value="adv."> adv. 副詞</label>
-              <label style="font-weight: 500; cursor: pointer;"><input type="checkbox" name="pos" value="prep."> prep. 介系詞</label>
-              <label style="font-weight: 500; cursor: pointer;"><input type="checkbox" name="pos" value="conj."> conj. 連接詞</label>
-              <label style="font-weight: 500; cursor: pointer;"><input type="checkbox" name="pos" value="phr."> phr. 片語</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+              <label style="margin:0;">詞性與中文解釋 (可增加多組)</label>
+              <button type="button" class="btn btn-secondary" style="padding: 0.2rem 0.6rem; font-size: 0.8rem;" onclick="addMeaningRow('add-meanings-container')">➕ 新增一組詞性</button>
+            </div>
+            <div id="add-meanings-container">
+              <!-- 動態生成詞性輸入列 -->
             </div>
           </div>
 
           <div class="form-group">
-            <label>中文解釋 (如多詞性可註明，例如：n.嘗試 v.試圖)</label>
-            <input type="text" id="word-meaning" required placeholder="例如: n.嘗試 v.努力">
-          </div>
-
-          <div class="form-group">
             <label>英文例句 (可選)</label>
-            <textarea id="word-sentence" rows="2" placeholder="例如: I will try my best."></textarea>
+            <textarea id="word-sentence" rows="2" placeholder="例如: The meeting lasted for two hours."></textarea>
           </div>
 
-          <button type="submit" class="btn" style="width: 100%;">💾 儲存並同步至雲端</button>
+          <button type="submit" class="btn" style="width: 100%;">💾 儲存單字至雲端</button>
         </form>
       </div>
     </div>
@@ -193,6 +191,7 @@
 
   </div>
 
+  <!-- 編輯視窗 -->
   <div id="edit-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <h3 style="margin-bottom: 1rem;">✏️ 編輯單字內容</h3>
@@ -204,13 +203,11 @@
       </div>
       
       <div class="form-group">
-        <label>詞性標籤</label>
-        <input type="text" id="edit-word-pos" placeholder="例如: n., v.">
-      </div>
-
-      <div class="form-group">
-        <label>中文註釋 / 解釋 (可在後面新增補充)</label>
-        <textarea id="edit-word-meaning" rows="3" placeholder="例如: n.嘗試 v.試圖"></textarea>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+          <label style="margin:0;">詞性與中文解釋</label>
+          <button type="button" class="btn btn-secondary" style="padding: 0.2rem 0.6rem; font-size: 0.8rem;" onclick="addMeaningRow('edit-meanings-container')">➕ 新增一組詞性</button>
+        </div>
+        <div id="edit-meanings-container"></div>
       </div>
 
       <div class="form-group">
@@ -234,6 +231,55 @@
     let currentQuizIndex = 0;
     let currentQuizQuestions = [];
     let wrongAnswers = [];
+
+    const POS_OPTIONS = ["v.", "n.", "adj.", "adv.", "prep.", "conj.", "phr.", "其他"];
+
+    // 初始化頁面時建立預設一組欄位
+    window.onload = () => {
+      addMeaningRow('add-meanings-container');
+    };
+
+    function addMeaningRow(containerId, pos = "v.", meaning = "") {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      const row = document.createElement("div");
+      row.className = "meaning-row";
+
+      let optionsHtml = POS_OPTIONS.map(p => `<option value="${p}" ${p === pos ? 'selected' : ''}>${p}</option>`).join('');
+
+      row.innerHTML = `
+        <select class="pos-select">${optionsHtml}</select>
+        <input type="text" class="meaning-input" placeholder="中文解釋 (如: 持續)" value="${meaning}">
+        <button type="button" class="btn btn-secondary" style="padding: 0.5rem; color: var(--danger);" onclick="removeMeaningRow(this)">✕</button>
+      `;
+
+      container.appendChild(row);
+    }
+
+    function removeMeaningRow(btn) {
+      const row = btn.parentElement;
+      const container = row.parentElement;
+      if (container.children.length > 1) {
+        row.remove();
+      } else {
+        alert("至少需要保留一組詞性與解釋！");
+      }
+    }
+
+    function getMeaningsFromContainer(containerId) {
+      const container = document.getElementById(containerId);
+      const rows = container.querySelectorAll(".meaning-row");
+      const list = [];
+      rows.forEach(r => {
+        const pos = r.querySelector(".pos-select").value;
+        const meaning = r.querySelector(".meaning-input").value.trim();
+        if (meaning) {
+          list.push({ pos, meaning });
+        }
+      });
+      return list;
+    }
 
     async function login() {
       const input = document.getElementById("username-input");
@@ -273,7 +319,16 @@
 
         const cloudData = await res.json();
         if (Array.isArray(cloudData)) {
-          vocabData = cloudData;
+          // 相容舊資料格式（若無 meanings 陣列，自動轉成新格式）
+          vocabData = cloudData.map(item => {
+            if (!item.meanings || !Array.isArray(item.meanings)) {
+              return {
+                ...item,
+                meanings: [{ pos: item.pos || "其他", meaning: item.meaning || "" }]
+              };
+            }
+            return item;
+          });
           setSyncStatus(`✅ 已成功載入 ${vocabData.length} 個雲端單字！`);
         } else {
           throw new Error("格式錯誤");
@@ -355,58 +410,59 @@
 
       if (msg) {
         msg.style.color = "var(--primary)";
-        msg.innerText = "⏳ 正在查詢翻譯與字典...";
+        msg.innerText = "⏳ 正在分析字典多重詞性...";
       }
 
-      document.querySelectorAll('input[name="pos"]').forEach(cb => cb.checked = false);
+      const container = document.getElementById("add-meanings-container");
+      container.innerHTML = "";
 
       try {
-        const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|zh-TW`);
-        if (transRes.ok) {
-          const transData = await transRes.json();
-          if (transData?.responseData?.translatedText) {
-            document.getElementById("word-meaning").value = transData.responseData.translatedText;
-          }
-        }
-
         const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
-
-        if (dictRes.status === 404) {
-          if (msg) {
-            msg.style.color = "var(--warning)";
-            msg.innerText = "⚠️ 翻譯已帶入，無詞性資料";
-          }
-          return;
-        }
 
         if (dictRes.ok) {
           const dictData = await dictRes.json();
           if (Array.isArray(dictData) && dictData[0]?.meanings) {
+            
+            // 抓取多個詞性
             dictData[0].meanings.forEach(m => {
-              const p = m.partOfSpeech ? m.partOfSpeech.toLowerCase() : "";
-              if (p.includes("noun")) checkPosCheckbox("n.");
-              if (p.includes("verb")) checkPosCheckbox("v.");
-              if (p.includes("adjective")) checkPosCheckbox("adj.");
-              if (p.includes("adverb")) checkPosCheckbox("adv.");
-              if (p.includes("preposition")) checkPosCheckbox("prep.");
-              if (p.includes("conjunction")) checkPosCheckbox("conj.");
-            });
+              const rawPos = m.partOfSpeech ? m.partOfSpeech.toLowerCase() : "";
+              let posMapped = "其他";
+              if (rawPos.includes("verb")) posMapped = "v.";
+              else if (rawPos.includes("noun")) posMapped = "n.";
+              else if (rawPos.includes("adjective")) posMapped = "adj.";
+              else if (rawPos.includes("adverb")) posMapped = "adv.";
+              else if (rawPos.includes("preposition")) posMapped = "prep.";
+              else if (rawPos.includes("conjunction")) posMapped = "conj.";
 
-            for (let m of dictData[0].meanings) {
-              if (m.definitions) {
-                const defWithEx = m.definitions.find(d => d.example);
-                if (defWithEx) {
-                  document.getElementById("word-sentence").value = defWithEx.example;
-                  break;
-                }
+              // 取英文第一條定義輔助
+              const def = m.definitions[0]?.definition || "";
+              addMeaningRow("add-meanings-container", posMapped, def);
+
+              // 尋找例句
+              const defWithEx = m.definitions.find(d => d.example);
+              if (defWithEx && !document.getElementById("word-sentence").value) {
+                document.getElementById("word-sentence").value = defWithEx.example;
               }
-            }
+            });
           }
+        }
+
+        // 搭配翻譯API取得中文參考
+        const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|zh-TW`);
+        if (transRes.ok) {
+          const transData = await transRes.json();
+          if (transData?.responseData?.translatedText && container.children.length === 0) {
+            addMeaningRow("add-meanings-container", "v.", transData.responseData.translatedText);
+          }
+        }
+
+        if (container.children.length === 0) {
+          addMeaningRow("add-meanings-container", "v.", "");
         }
 
         if (msg) {
           msg.style.color = "var(--success)";
-          msg.innerText = "✅ 自動帶入成功！";
+          msg.innerText = "✅ 詞性結構分析完成！請微調中文解釋即可。";
         }
 
       } catch (err) {
@@ -415,15 +471,11 @@
           msg.style.color = "var(--danger)";
           msg.innerText = `❌ 出錯: ${err.message}`;
         }
+        addMeaningRow("add-meanings-container", "v.", "");
       }
     }
 
-    function checkPosCheckbox(val) {
-      const cb = document.querySelector(`input[name="pos"][value="${val}"]`);
-      if (cb) cb.checked = true;
-    }
-
-    // 🚀 重構：完全不需要彈出視窗的「兩段式安全刪除按鈕」
+    // 渲染卡片 (完整呈現多重詞性標籤)
     function renderWordList() {
       const container = document.getElementById("word-list");
       if (!container) return;
@@ -433,7 +485,8 @@
 
       container.innerHTML = "";
       let filtered = vocabData.filter(item => {
-        const matchesKey = item.word.toLowerCase().includes(keyword) || item.meaning.includes(keyword);
+        const meaningsStr = item.meanings ? item.meanings.map(m => `${m.pos} ${m.meaning}`).join(' ') : (item.meaning || '');
+        const matchesKey = item.word.toLowerCase().includes(keyword) || meaningsStr.toLowerCase().includes(keyword);
         const matchesFilter = filter === 'all' || (filter === 'error' && item.isError);
         return matchesKey && matchesFilter;
       });
@@ -447,46 +500,60 @@
         const card = document.createElement("div");
         card.className = `word-card ${item.isError ? 'error-marked' : ''}`;
         
+        // 渲染多組詞性與中文
+        let meaningsHtml = "";
+        if (item.meanings && item.meanings.length > 0) {
+          meaningsHtml = item.meanings.map(m => `
+            <div class="meaning-item">
+              <span class="badge badge-pos">${m.pos}</span>
+              <span style="font-weight: 500;">${m.meaning}</span>
+            </div>
+          `).join('');
+        } else {
+          meaningsHtml = `
+            <div class="meaning-item">
+              <span class="badge badge-pos">${item.pos || '其他'}</span>
+              <span style="font-weight: 500;">${item.meaning}</span>
+            </div>`;
+        }
+
         card.innerHTML = `
-          <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.3rem;">
+          <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center;">
             ${item.word} ${item.isError ? '<span class="badge badge-error">易錯</span>' : ''}
           </div>
-          <div style="margin-bottom: 0.5rem;">
-            <span class="badge badge-pos">${item.pos || '未指定'}</span>
-            <span style="font-weight: 500; white-space: pre-line;">${item.meaning}</span>
+          <div style="margin-bottom: 0.8rem;">
+            ${meaningsHtml}
           </div>
-          ${item.sentence ? `<p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">💬 ${item.sentence}</p>` : ''}
+          ${item.sentence ? `<p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem; background: #f8fafc; padding: 0.4rem; border-radius: 6px;">💬 ${item.sentence}</p>` : ''}
           <div class="btn-group" style="margin-top: 1rem; display: flex; gap: 0.3rem; flex-wrap: wrap;"></div>
         `;
 
         const btnGroup = card.querySelector('.btn-group');
 
-        // 1. 字典按鈕
+        // 按鈕列
         const btnDict = document.createElement('button');
         btnDict.className = "btn btn-secondary";
         btnDict.style.cssText = "padding: 0.3rem 0.5rem; font-size: 0.8rem;";
         btnDict.innerText = "🔍 字典";
         btnDict.onclick = () => lookupDictionary(item.word);
 
-        // 2. 編輯按鈕
         const btnEdit = document.createElement('button');
         btnEdit.className = "btn btn-secondary";
         btnEdit.style.cssText = "padding: 0.3rem 0.5rem; font-size: 0.8rem;";
-        btnEdit.innerText = "✏️ 編輯釋義";
+        btnEdit.innerText = "✏️ 編輯";
         btnEdit.onclick = () => openEditModal(item.id);
 
-        // 3. 標註易錯按鈕
         const btnErr = document.createElement('button');
         btnErr.className = "btn btn-secondary";
         btnErr.style.cssText = "padding: 0.3rem 0.5rem; font-size: 0.8rem;";
         btnErr.innerText = item.isError ? '取消標註' : '標註易錯';
         btnErr.onclick = () => toggleError(item.id);
 
-        // 4. 🔥 新刪除按鈕邏輯：免跳彈窗、原生UI兩階段安全確認
+        // 平板無跳窗兩段式刪除
         const btnDel = document.createElement('button');
         btnDel.type = "button";
         btnDel.className = "btn btn-danger";
-        btnDel.style.cssText = "padding: 0.3rem 0.5rem; font-size: 0.8rem; margin-left: auto; transition: all 0.2s;";
+        btnDel.style.cssText = "padding: 0.3rem 0.5rem; font-size: 0.8rem; margin-left: auto;";
         btnDel.innerText = "刪除";
 
         let timer = null;
@@ -497,19 +564,16 @@
           e.stopPropagation();
 
           if (!isConfirming) {
-            // 第一階段：按鈕變身，提醒再按一次
             isConfirming = true;
             btnDel.innerText = "⚠️ 確定刪除？";
             btnDel.style.backgroundColor = "#b91c1c";
             
-            // 3 秒沒按第二次就還原
             timer = setTimeout(() => {
               isConfirming = false;
               btnDel.innerText = "刪除";
               btnDel.style.backgroundColor = "";
             }, 3000);
           } else {
-            // 第二階段：點擊第二次，直接刪除！
             clearTimeout(timer);
             executeDirectDelete(item.id);
           }
@@ -524,7 +588,6 @@
       });
     }
 
-    // ⚡ 直接執行刪除，不經過任何 confirm 對話框
     function executeDirectDelete(id) {
       const targetId = String(id).trim();
       vocabData = vocabData.filter(item => String(item.id).trim() !== targetId);
@@ -536,18 +599,21 @@
     async function addWord(e) {
       e.preventDefault();
       const spelling = document.getElementById("word-spelling").value.trim();
-      const meaning = document.getElementById("word-meaning").value.trim();
       const sentence = document.getElementById("word-sentence").value.trim();
 
-      const selectedPos = Array.from(document.querySelectorAll('input[name="pos"]:checked'))
-                               .map(cb => cb.value);
-      const posStr = selectedPos.length > 0 ? selectedPos.join(", ") : "其他";
+      const meaningsList = getMeaningsFromContainer("add-meanings-container");
+      if (meaningsList.length === 0) return alert("請至少填寫一組詞性與中文解釋！");
+
+      // 相容欄位 (抓第一組作為舊預設值)
+      const primaryPos = meaningsList[0].pos;
+      const primaryMeaning = meaningsList.map(m => `${m.pos} ${m.meaning}`).join(' ');
 
       vocabData.push({ 
         id: Date.now().toString(), 
         word: spelling, 
-        pos: posStr, 
-        meaning: meaning, 
+        pos: primaryPos, 
+        meaning: primaryMeaning,
+        meanings: meaningsList, 
         sentence: sentence, 
         isError: false 
       });
@@ -556,7 +622,8 @@
       await saveUserDataToCloud();
       
       document.getElementById("add-word-form").reset();
-      document.querySelectorAll('input[name="pos"]').forEach(cb => cb.checked = false);
+      document.getElementById("add-meanings-container").innerHTML = "";
+      addMeaningRow("add-meanings-container");
       if(document.getElementById("auto-fetch-msg")) document.getElementById("auto-fetch-msg").innerText = "";
       switchTab('list');
     }
@@ -567,9 +634,16 @@
 
       document.getElementById("edit-word-id").value = item.id;
       document.getElementById("edit-word-spelling").value = item.word;
-      document.getElementById("edit-word-pos").value = item.pos || "";
-      document.getElementById("edit-word-meaning").value = item.meaning || "";
       document.getElementById("edit-word-sentence").value = item.sentence || "";
+
+      const container = document.getElementById("edit-meanings-container");
+      container.innerHTML = "";
+
+      if (item.meanings && item.meanings.length > 0) {
+        item.meanings.forEach(m => addMeaningRow("edit-meanings-container", m.pos, m.meaning));
+      } else {
+        addMeaningRow("edit-meanings-container", item.pos || "v.", item.meaning || "");
+      }
 
       document.getElementById("edit-modal").classList.remove("hidden");
     }
@@ -583,8 +657,12 @@
       const item = vocabData.find(i => String(i.id) === String(id));
       
       if (item) {
-        item.pos = document.getElementById("edit-word-pos").value.trim();
-        item.meaning = document.getElementById("edit-word-meaning").value.trim();
+        const meaningsList = getMeaningsFromContainer("edit-meanings-container");
+        if (meaningsList.length === 0) return alert("請至少保留一組詞性與中文解釋！");
+
+        item.meanings = meaningsList;
+        item.pos = meaningsList[0].pos;
+        item.meaning = meaningsList.map(m => `${m.pos} ${m.meaning}`).join(' ');
         item.sentence = document.getElementById("edit-word-sentence").value.trim();
 
         closeEditModal();
@@ -602,6 +680,7 @@
       }
     }
 
+    // 測驗邏輯
     function selectQuizType(type, el) {
       currentQuizType = type;
       document.querySelectorAll(".type-card").forEach(c => c.classList.remove("selected"));
@@ -626,6 +705,13 @@
       showNextQuestion();
     }
 
+    function getFormattedMeaningText(item) {
+      if (item.meanings && item.meanings.length > 0) {
+        return item.meanings.map(m => `${m.pos} ${m.meaning}`).join('；');
+      }
+      return `${item.pos || ''} ${item.meaning || ''}`;
+    }
+
     function showNextQuestion() {
       if (currentQuizIndex >= currentQuizQuestions.length) return finishQuiz();
 
@@ -637,18 +723,20 @@
       optionsContainer.classList.add("hidden");
       inputContainer.classList.add("hidden");
 
+      const fullMeaningText = getFormattedMeaningText(q);
+
       if (currentQuizType === 'choice_en_zh') {
         document.getElementById("quiz-question-display").innerText = q.word;
-        document.getElementById("quiz-sub-prompt").innerText = `請選擇正確中文（詞性：${q.pos}）`;
+        document.getElementById("quiz-sub-prompt").innerText = `請選擇正確中文註釋`;
         optionsContainer.classList.remove("hidden");
-        renderOptions(q, 'meaning');
+        renderOptions(q, 'meaning_text');
       } else if (currentQuizType === 'choice_zh_en') {
-        document.getElementById("quiz-question-display").innerText = `${q.pos} ${q.meaning}`;
+        document.getElementById("quiz-question-display").innerText = fullMeaningText;
         document.getElementById("quiz-sub-prompt").innerText = "請選擇正確英文單字";
         optionsContainer.classList.remove("hidden");
         renderOptions(q, 'word');
       } else if (currentQuizType === 'spelling') {
-        document.getElementById("quiz-question-display").innerText = `${q.pos} ${q.meaning}`;
+        document.getElementById("quiz-question-display").innerText = fullMeaningText;
         document.getElementById("quiz-sub-prompt").innerText = `請拼寫英文單字 (首字母: ${q.word[0]})`;
         inputContainer.classList.remove("hidden");
         document.getElementById("quiz-type-input").value = "";
@@ -667,7 +755,7 @@
       options.forEach(opt => {
         const btn = document.createElement("button");
         btn.className = "option-btn";
-        btn.innerText = opt[key];
+        btn.innerText = key === 'meaning_text' ? getFormattedMeaningText(opt) : opt[key];
         btn.onclick = () => checkAnswer(String(opt.id) === String(q.id), q);
         container.appendChild(btn);
       });
@@ -706,7 +794,7 @@
         wrongAnswers.forEach(item => {
           const div = document.createElement("div");
           div.style.cssText = "padding: 0.8rem; border-bottom: 1px solid var(--border);";
-          div.innerHTML = `<strong style="color: var(--danger);">${item.word}</strong> (${item.pos}) ${item.meaning}`;
+          div.innerHTML = `<strong style="color: var(--danger);">${item.word}</strong> - ${getFormattedMeaningText(item)}`;
           wrongContainer.appendChild(div);
         });
       }
