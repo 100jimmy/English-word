@@ -469,7 +469,8 @@ async function autoFetchDetails() {
             <button class="btn btn-danger" style="padding: 0.3rem 0.5rem; font-size: 0.8rem; margin-left: auto;" onclick="deleteWord('${item.id}')">刪除</button>
           </div>
         `;
-        container.appendChild(  // ➕ 支援「多詞性組合」的新增單字
+        container.appendChild( 
+          // ➕ 支援「多詞性組合」的新增單字
   async function addWord(e) {
     e.preventDefault();
     const spelling = document.getElementById("word-spelling").value.trim();
