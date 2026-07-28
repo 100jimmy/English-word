@@ -31,7 +31,8 @@
     .container { max-width: 900px; margin: 1.5rem auto; padding: 0 1rem; }
     .card { background: var(--card-bg); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--border); }
     
-    .hidden { display: none !important; }
+    /* 修正平板隱藏遮罩點擊問題 */
+    .hidden { display: none !important; pointer-events: none !important; }
     .sync-status { font-size: 0.85rem; color: #a5b4fc; font-weight: 500; margin-left: 1rem; }
     
     .nav-bar { display: flex; gap: 0.5rem; background: #e0e7ff; padding: 0.4rem; border-radius: var(--radius); margin-bottom: 1.5rem; }
@@ -66,7 +67,6 @@
     .option-btn { padding: 1rem; font-size: 1rem; background: #f8fafc; border: 2px solid var(--border); border-radius: var(--radius); cursor: pointer; font-weight: 600; }
     .option-btn:hover { background: var(--primary-light); border-color: var(--primary); }
 
-    /* Modal 彈窗樣式 */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
     .modal-content { background: white; padding: 1.5rem; border-radius: var(--radius); width: 90%; max-width: 500px; box-shadow: var(--shadow); }
   </style>
@@ -85,8 +85,6 @@
   </header>
 
   <div class="container">
-    
-    <!-- 1. 登入區塊 -->
     <div id="auth-section" class="card">
       <h2 style="margin-top:0;">☁️ 歡迎使用雲端單字庫試4</h2>
       <p style="color: var(--text-muted); margin-bottom: 1rem;">輸入名字即可自動從 Google 雲端載入您的專屬單字：</p>
@@ -96,14 +94,12 @@
       <button type="button" class="btn" style="width: 100%; margin-top: 0.5rem;" onclick="login()">🚀 載入雲端單字庫</button>
     </div>
 
-    <!-- 主導覽列 -->
     <div id="app-nav" class="nav-bar hidden">
       <button class="nav-btn active" onclick="switchTab('list')">📖 單字總覽</button>
       <button class="nav-btn" onclick="switchTab('add')">➕ 新增單字</button>
       <button class="nav-btn" onclick="switchTab('quiz')">✍️ 測驗模式</button>
     </div>
 
-    <!-- 2. 單字總覽頁面 -->
     <div id="list-tab" class="tab-content hidden">
       <div class="card" style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
         <input type="text" id="search-input" placeholder="🔍 搜尋單字、解釋..." style="flex: 1; min-width: 200px;" oninput="renderWordList()">
@@ -115,7 +111,6 @@
       <div id="word-list" class="grid-list"></div>
     </div>
 
-    <!-- 3. 新增單字頁面 -->
     <div id="add-tab" class="tab-content hidden">
       <div class="card">
         <h2 style="margin-top:0;">➕ 新增英文單字 (即時同步雲端)</h2>
@@ -162,7 +157,6 @@
       </div>
     </div>
 
-    <!-- 4. 測驗模式頁面 -->
     <div id="quiz-tab" class="tab-content hidden">
       <div id="quiz-start-box" class="card quiz-container">
         <h2>✍️ 單字自我測驗</h2>
@@ -200,7 +194,6 @@
 
   </div>
 
-  <!-- ✏️ 編輯單字彈窗 Modal -->
   <div id="edit-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <h3 style="margin-bottom: 1rem;">✏️ 編輯單字內容</h3>
@@ -468,7 +461,8 @@
             <button class="btn btn-secondary" style="padding: 0.3rem 0.5rem; font-size: 0.8rem;" onclick="toggleError('${item.id}')">
               ${item.isError ? '取消標註' : '標註易錯'}
             </button>
-            <button class="btn btn-danger" style="padding: 0.3rem 0.5rem; font-size: 0.8rem; margin-left: auto;" onclick="deleteWord('${item.id}')">刪除</button>
+            <!-- 改用平板安全的 data-id 傳遞方式 -->
+            <button class="btn btn-danger" style="padding: 0.3rem 0.5rem; font-size: 0.8rem; margin-left: auto;" data-id="${item.id}" onclick="deleteWordSafe(this)">刪除</button>
           </div>
         `;
         container.appendChild(card);
@@ -504,7 +498,6 @@
       switchTab('list');
     }
 
-    // ✏️ 打開編輯 Modal
     function openEditModal(id) {
       const item = vocabData.find(i => String(i.id) === String(id));
       if (!item) return;
@@ -522,7 +515,6 @@
       document.getElementById("edit-modal").classList.add("hidden");
     }
 
-    // 💾 儲存修改後的單字
     async function saveEditedWord() {
       const id = document.getElementById("edit-word-id").value;
       const item = vocabData.find(i => String(i.id) === String(id));
@@ -538,12 +530,25 @@
       }
     }
 
-    async function deleteWord(id) {
-      if (confirm("確定要刪除此單字？")) {
-        vocabData = vocabData.filter(i => String(i.id) !== String(id));
-        renderWordList();
-        await saveUserDataToCloud();
+    // 📱 平板專用的超強壯刪除函數
+    function deleteWordSafe(btnElement) {
+      const id = btnElement.getAttribute('data-id');
+      if (!id) return alert("找不到單字 ID！");
+
+      let isSure = false;
+      try {
+        isSure = window.confirm("確定要刪除此單字？");
+      } catch (e) {
+        isSure = true; // 防範平板阻擋 confirm 彈窗
       }
+
+      if (!isSure) return;
+
+      const targetId = String(id).trim();
+      vocabData = vocabData.filter(item => String(item.id).trim() !== targetId);
+
+      renderWordList();
+      saveUserDataToCloud(); // 背景非同步儲存，不卡畫面
     }
 
     async function toggleError(id) {
